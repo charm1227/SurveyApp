@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<!--
+	File Name: create.html
+	Date: 3/14/22
+-->
+<html lang="en">
+<head>
+	<title>Survey App | Create Survey Page</title>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+	<form>
+		<div class="TrueFalse">
+    			<label for="truefalse"><b>True/False</b></label>
+                <input type="text" placeholder="Enter Question" id="truefalse">
+    			<input type="radio" id="True" name="truefalse" value="true">
+                <input type="radio" id="False" name="truefalse" value="false">
+		</div>
+	</form>
+    <form>
+        <div class="MultipleChoice">
+            <label for="multiplechoice"><b>Multiple Choice</b></label>
+            <input type="text" placeholder="Enter Question" id="multiplechoice">
+            <input type="checkbox" id="option 1" name="option 1" value="option 1">
+            <label for="option 1"><input type="text" placeholder="Insert Text" id="insert text"></label>
+            <input type="checkbox" id="option 2" name="option 2" value="option 2">
+            <label for="option 2"><input type="text" placeholder="Insert Text" id="insert text"></label>
+            <input type="checkbox" id="option 3" name="option 3" value="option 3">
+            <label for="option 3"><input type="text" placeholder="Insert Text" id="insert text"></label>
+            <input type="checkbox" id="option 4" name="option 4" value="option 4">
+            <label for="option 4"><input type="text" placeholder="Insert Text" id="insert text"></label>
+        </div>
+    </form>
+    <form>
+        <div class="FreeResponse">
+            <label for="freeresponse"><b>Free Response</b></label>
+            <input type="text" placeholder="Enter Response" id="freeresponse" name="freeresponse">
+        </div>
+    </form>
+</body>
+</html>
