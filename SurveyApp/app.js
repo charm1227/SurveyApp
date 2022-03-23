@@ -37,15 +37,17 @@ app.get('/login', (request, response) => {
 
 // submit login
 app.post('/submitLogin', (request, response) => {
-    
-    // TODO validate
-    console.log(request.body.username);
+    let validUsername = username == request.body.username;
+    let validPassword = password == request.body.password;
 
-    if(true) {
+    if(validUsername && validPassword) {
         activeUser = request.socket.remoteAddress;
         response.redirect('/dashboard');
         return;
     }
+
+    response.redirect('/');
+    return;
 }); 
 
 // logout
