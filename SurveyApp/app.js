@@ -1,6 +1,7 @@
 // init
 const express = require('express');
 const app = express(); 
+const bodyParser = require('body-parser'); // allows us to access data from forms
 
 const http = require('http');
 const path = require('path');
@@ -9,7 +10,13 @@ const bcrypt = require('bcrypt');
 
 let activeUser = null;
 
+// TEMPORARY
+let username = 'admin';
+let password = 'password';
+//
+
 app.use(express.static(__dirname + '/public')); // make public directory accessible to client
+app.use(bodyParser.urlencoded({ extended: true })); // use body parser
 
 // get site
 app.get('/', (request, response) => {
@@ -32,6 +39,7 @@ app.get('/login', (request, response) => {
 app.post('/submitLogin', (request, response) => {
     
     // TODO validate
+    console.log(request.body.username);
 
     if(true) {
         activeUser = request.socket.remoteAddress;
