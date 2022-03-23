@@ -1,75 +1,77 @@
 // init
 const express = require('express');
-const res = require('express/lib/response');
 const app = express(); 
 
 const http = require('http');
 const path = require('path');
 
 const bcrypt = require('bcrypt');
-const { runInNewContext } = require('vm');
 
-// routes
+let activeUser = null;
 
-/*
-    USE = all
-    POST = create new record
-    GET = read record
-    PUT = if record exists then update; otherwise create new record
-    PATCH = update/modify record
-    DELETE = delete record
+app.use(express.static(__dirname + '/public')); // make public directory accessible to client
 
-    req = request
-    res = response
-*/
-
-let ipAddress = null;
-
-app.use(express.static(__dirname + '/public')); // make styles public
-
-// load login
-app.get('/', function(req, res) {
-    
-    console.log('Logged in: ' + ipAddress + ' | Request: / by ' + req.socket.remoteAddress);
-    
-    res.sendFile(__dirname + '/views/login.html');
-}); 
-
-// submit login
-app.post('/login', function(req, res) {
-    
-    // validate
-    if(true) {
-        ipAddress = req.socket.remoteAddress;
-        res.redirect('/dashboard');
-    }
-
-}); 
-
-// load dashboard
-app.get('/dashboard', function(req, res) {
-
-    console.log('Logged in: ' + ipAddress + ' | Request: /dashboard by ' + req.socket.remoteAddress);
-
-    if(!validUser(req, res)) {
-        res.redirect('/');
+// get site
+app.get('/', (request, response) => {
+    if(authenticated(request, response)) {
+        response.redirect('/dashboard');
         return;
     }
 
-    res.sendFile(path.join(__dirname + '/views/dashboard.html'));
+    response.redirect('/login');
+    return;
 });
 
-function validUser(req, res) {
-    let loggedIn = ipAddress != null;
-    let currentUser = JSON.stringify(ipAddress) === JSON.stringify(req.socket.remoteAddress);
+// get login page
+app.get('/login', (request, response) => {    
+    response.sendFile(__dirname + '/views/login.html');
+    return;
+}); 
+
+// submit login
+app.post('/submitLogin', (request, response) => {
+    
+    // TODO validate
+
+    if(true) {
+        activeUser = request.socket.remoteAddress;
+        response.redirect('/dashboard');
+        return;
+    }
+}); 
+
+// logout
+app.get('/logout', (request, response) => {
+    if(authenticated(request, response)) {
+        activeUser = null;
+        response.redirect('/login');
+        return;
+    }
+
+    response.redirect('/');
+    return;
+});
+
+// load dashboard
+app.get('/dashboard', (request, response) => {
+    if(!authenticated(request, response)) {
+        response.redirect('/');
+        return;
+    }
+
+    response.sendFile(path.join(__dirname + '/views/dashboard.html'));
+    return;
+});
+
+function authenticated(request, response) {
+    let loggedIn = activeUser != null;
+    let currentUser = JSON.stringify(activeUser) === JSON.stringify(request.socket.remoteAddress);
     if(!loggedIn || !currentUser) {
-        console.log('user ' + req.socket.remoteAddress + ' denied access');
         return false;
     }
     return true;
 }
 
-// start server
 const server = http.createServer(app);
 server.listen(3000); // port 3000
 console.log('running server');
