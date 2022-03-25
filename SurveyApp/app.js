@@ -2,10 +2,9 @@
 const express = require('express');
 const app = express(); 
 const bodyParser = require('body-parser'); // allows us to access data from forms
-
 const http = require('http');
 const path = require('path');
-
+const fs = require('fs');
 const bcrypt = require('bcrypt');
 
 let activeUser = null;
@@ -20,6 +19,7 @@ app.use(bodyParser.urlencoded({ extended: true })); // use body parser
 
 // get site
 app.get('/', (request, response) => {
+    // check authentication
     if(authenticated(request, response)) {
         response.redirect('/dashboard');
         return;
@@ -37,9 +37,9 @@ app.get('/login', (request, response) => {
 
 // submit login
 app.post('/submitLogin', (request, response) => {
+    // validate login
     let validUsername = username == request.body.username;
     let validPassword = password == request.body.password;
-
     if(validUsername && validPassword) {
         activeUser = request.socket.remoteAddress;
         response.redirect('/dashboard');
@@ -52,6 +52,7 @@ app.post('/submitLogin', (request, response) => {
 
 // logout
 app.get('/logout', (request, response) => {
+    // check authentication
     if(authenticated(request, response)) {
         activeUser = null;
         response.redirect('/login');
@@ -64,10 +65,33 @@ app.get('/logout', (request, response) => {
 
 // load dashboard
 app.get('/dashboard', (request, response) => {
+    // check authentication
     if(!authenticated(request, response)) {
         response.redirect('/');
         return;
     }
+
+    // read my surveys
+    fs.readdir('data/my_surveys', (error, files) => {
+        if(error) {
+            console.log('could not read files');
+        }
+        else {
+            files.forEach( (file) => {
+                response.write(file);
+            });
+        }
+    });
+
+    // read live surveys
+    fs.readdir('data/live_surveys', (error, files) => {
+        if(error) {
+            console.log('could not read files');
+        }
+        else {
+            
+        }
+    });
 
     response.sendFile(path.join(__dirname + '/views/dashboard.html'));
     return;
