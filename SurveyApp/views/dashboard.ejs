@@ -12,42 +12,36 @@
     <div class="grid-container">
         <div class="grid-item">
             <h1><u>My Surveys</u></h1>
-            
-            <ul>
-                <% data.mySurveys.forEach(survey => { %>
-                    <li> <%= survey %> </li>
-                <% }); %>
-            </ul>
 
-            <div class="controls">
-                <label>Code</label>
-                <input type="text" placeholder="Enter code..." name="code">
+            <!-- My surveys -->
+            <% data.mySurveys.forEach(survey => { %>
+                <div class="survey">
+                    <label><%= survey.code + ' - ' + survey.name %></label>
+                    <input class = "buttonIcon" onclick="window.location.href = '/publishSurvey/<%= survey.code %>';" type="image" src="icons/upload_icon.png" alt="publish" name="upload icon"> %>
+                    <input class = "buttonIcon" onclick="window.location.href = '/editSurvey/<%= survey.code %>';" type="image" src="icons/edit_icon.png" alt="edit" name="edit icon">
+                    <input class = "buttonIcon" onclick="window.location.href = '/deleteSurvey/<%= survey.code %>';" type="image" src="icons/trash_icon.png" alt="delete" name="trash icon">
+                </div>
+                <br>
+            <% }); %>
 
-                <input type="image" src="icons/upload_icon.png" alt="upload icon" name="upload icon">
-                <input type="image" src="icons/edit_icon.png" alt="edit icon" name="edit icon">
-                <input type="image" src="icons/trash_icon.png" alt="trash icon" name="trash icon">
-            </div>
-
-            <input type="image" onclick="location.href='create.html'" src="icons/add_icon.png" alt="add icon" name="add icon">
+            <!-- Add survey button -->
+            <input type="image" onclick="window.location.href = '/createSurvey';" src="icons/add_icon.png" alt="create survey" name="add icon">
 
         </div>
         
         <div class="grid-item">
             <h1><u>Active Surveys</u></h1>
 
-            <ul>
-                <% data.activeSurveys.forEach(survey => { %>
-                    <li> <%= survey %> </li>
-                <% }); %>
-            </ul>
+            <!-- Published surveys -->
+            <% data.publishedSurveys.forEach(survey => { %>
+                <div class="survey">
+                    <label><%= survey.code + ' - ' + survey.name %></label>
+                    <input class = "buttonIcon" onclick="window.location.href = '/downloadSurveyData/<%= survey.code %>';" type="image" src="icons/download_icon.png" alt="download" name="download icon">
+                    <input class = "buttonIcon" onclick="window.location.href = '/unpublishSurvey/<%= survey.code %>';" type="image" src="icons/minus_icon.png" alt="unpublish" name="minus icon">
+                </div>
+                <br>
+            <% }); %>
 
-            <div class="controls">
-                <label>Code</label>
-                <input type="text" placeholder="Enter code..." name="code">
-
-                <input type="image" src="icons/download_icon.png" alt="download icon" name="download icon">
-                <input type="image" src="icons/minus_icon.png" alt="minus icon" name="minus icon">
-            </div>
         </div>
     </div>
 </body>

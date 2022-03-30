@@ -7,6 +7,7 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
 const { debug } = require('console');
+const { closeDelimiter } = require('ejs');
 
 let activeUser = null;
 
@@ -74,27 +75,105 @@ app.get('/dashboard', (request, response) => {
         return;
     }
 
-    const mySurveys = GetSurveyTitles('data/my_surveys');
-    const activeSurveys = GetSurveyTitles('data/active_surveys');
+    const mySurveys = GetSurveyData('data/my_surveys');
+    const publishedSurveys = GetSurveyData('data/published_surveys');
 
-    response.render('dashboard', {data : {mySurveys, activeSurveys}});
+    response.render('dashboard', {data : {mySurveys, publishedSurveys: publishedSurveys}});
     response.end();
     return;
 });
 
-function GetSurveyTitles(directory) {
+app.get('/publishSurvey/:surveyCode', (request, response) => {
+    // check authentication
+    if(!authenticated(request, response)) {
+        response.redirect('/');
+        response.end();
+        return;
+    }
+    let code = request.params.surveyCode;
+
+    console.log('publish ' + code);
+});
+
+app.get('/unpublishSurvey/:surveyCode', (request, response) => {
+    // check authentication
+    if(!authenticated(request, response)) {
+        response.redirect('/');
+        response.end();
+        return;
+    }
+    let code = request.params.surveyCode;
+
+    console.log('unpublish ' + code);
+});
+
+app.get('/createSurvey', (request, response) => {
+    // check authentication
+    if(!authenticated(request, response)) {
+        response.redirect('/');
+        response.end();
+        return;
+    }
+
+    console.log('create survey');
+});
+
+app.get('/editSurvey/:surveyCode', (request, response) => {
+    // check authentication
+    if(!authenticated(request, response)) {
+        response.redirect('/');
+        response.end();
+        return;
+    }
+    let code = request.params.surveyCode;
+
+    console.log('edit ' + code);
+});
+
+app.get('/deleteSurvey/:surveyCode', (request, response) => {
+    // check authentication
+    if(!authenticated(request, response)) {
+        response.redirect('/');
+        response.end();
+        return;
+    }
+    let code = request.params.surveyCode;
+
+    console.log('delete ' + code);
+});
+
+app.get('/downloadSurveyData/:surveyCode', (request, response) => {
+    // check authentication
+    if(!authenticated(request, response)) {
+        response.redirect('/');
+        response.end();
+        return;
+    }
+    let code = request.params.surveyCode;
+
+    console.log('download ' + code);
+})
+
+function GetSurveyData(directory) {
     const files = fs.readdirSync(directory);
     let fileArray = [];
     files.forEach(file => {
-        let s = '';
-        s += path.parse(file).name + ' - ';
-        const content = fs.readFileSync(directory + '/' + file, 'utf-8');
-        const lineEnd = content.indexOf('\n');
-        const title = content.substring(0, lineEnd);
-        s += title;
-        fileArray.push(s);
+        let surveyCode = path.parse(file).name;
+        let content = fs.readFileSync(directory + '/' + file, 'utf-8');
+        let lineEnd = content.indexOf('\n');
+        let surveyName = content.substring(0, lineEnd);
+
+        let fileData = new FileData(surveyCode, surveyName);
+        fileArray.push(fileData);
     });
     return fileArray;
+}
+
+class FileData {
+    constructor(code, name) {
+        this.code = code;
+        this.name = name;
+    }
 }
 
 function authenticated(request, response) {
