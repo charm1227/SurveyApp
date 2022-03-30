@@ -1,0 +1,10 @@
+Project tools
+
+Node - create server, access server files
+
+node dependencies
+	express - node framework, handle routes, requests, views
+	bcrypt - hash login credentials and data
+	ejs (embedded javascript) - templating
+	npm (body-parser) - parse request bodies for form data
+

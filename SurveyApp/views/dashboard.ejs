@@ -12,12 +12,13 @@
     <div class="grid-container">
         <div class="grid-item">
             <h1><u>My Surveys</u></h1>
+            
+            <ul>
+                <% data.mySurveys.forEach(survey => { %>
+                    <li> <%= survey %> </li>
+                <% }); %>
+            </ul>
 
-            <label>55555 - Test survey 1</label>
-            <br>
-            <label>66666 - Test survey 2</label>
-            <br>
-            <br>
             <div class="controls">
                 <label>Code</label>
                 <input type="text" placeholder="Enter code..." name="code">
@@ -32,13 +33,14 @@
         </div>
         
         <div class="grid-item">
-            <h1><u>Uploaded Surveys</u></h1>
+            <h1><u>Active Surveys</u></h1>
 
-            <label>55555 - Test survey 1</label>
-            <br>
-            <label>66666 - Test survey 2</label>
-            <br>
-            <br>
+            <ul>
+                <% data.activeSurveys.forEach(survey => { %>
+                    <li> <%= survey %> </li>
+                <% }); %>
+            </ul>
+
             <div class="controls">
                 <label>Code</label>
                 <input type="text" placeholder="Enter code..." name="code">

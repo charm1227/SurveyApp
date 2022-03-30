@@ -6,16 +6,18 @@ const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
+const { debug } = require('console');
 
 let activeUser = null;
 
 // TEMPORARY
 let username = 'admin';
 let password = 'password';
-//
+// ---------
 
 app.use(express.static(__dirname + '/public')); // make public directory accessible to client
 app.use(bodyParser.urlencoded({ extended: true })); // use body parser
+app.set('view engine', 'ejs');
 
 // get site
 app.get('/', (request, response) => {
@@ -68,34 +70,32 @@ app.get('/dashboard', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
         response.redirect('/');
+        response.end();
         return;
     }
 
-    // read my surveys
-    fs.readdir('data/my_surveys', (error, files) => {
-        if(error) {
-            console.log('could not read files');
-        }
-        else {
-            files.forEach( (file) => {
-                response.write(file);
-            });
-        }
-    });
+    const mySurveys = GetSurveyTitles('data/my_surveys');
+    const activeSurveys = GetSurveyTitles('data/active_surveys');
 
-    // read live surveys
-    fs.readdir('data/live_surveys', (error, files) => {
-        if(error) {
-            console.log('could not read files');
-        }
-        else {
-            
-        }
-    });
-
-    response.sendFile(path.join(__dirname + '/views/dashboard.html'));
+    response.render('dashboard', {data : {mySurveys, activeSurveys}});
+    response.end();
     return;
 });
+
+function GetSurveyTitles(directory) {
+    const files = fs.readdirSync(directory);
+    let fileArray = [];
+    files.forEach(file => {
+        let s = '';
+        s += path.parse(file).name + ' - ';
+        const content = fs.readFileSync(directory + '/' + file, 'utf-8');
+        const lineEnd = content.indexOf('\n');
+        const title = content.substring(0, lineEnd);
+        s += title;
+        fileArray.push(s);
+    });
+    return fileArray;
+}
 
 function authenticated(request, response) {
     let loggedIn = activeUser != null;
@@ -107,5 +107,5 @@ function authenticated(request, response) {
 }
 
 const server = http.createServer(app);
-server.listen(3000); // port 3000
+server.listen(3000);
 console.log('running server');
