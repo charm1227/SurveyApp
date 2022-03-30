@@ -93,6 +93,9 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
     let code = request.params.surveyCode;
 
     console.log('publish ' + code);
+
+    response.end();
+    return;
 });
 
 app.get('/unpublishSurvey/:surveyCode', (request, response) => {
@@ -105,6 +108,9 @@ app.get('/unpublishSurvey/:surveyCode', (request, response) => {
     let code = request.params.surveyCode;
 
     console.log('unpublish ' + code);
+
+    response.end();
+    return;
 });
 
 app.get('/createSurvey', (request, response) => {
@@ -116,6 +122,9 @@ app.get('/createSurvey', (request, response) => {
     }
 
     console.log('create survey');
+
+    response.end();
+    return;
 });
 
 app.get('/editSurvey/:surveyCode', (request, response) => {
@@ -128,6 +137,9 @@ app.get('/editSurvey/:surveyCode', (request, response) => {
     let code = request.params.surveyCode;
 
     console.log('edit ' + code);
+
+    response.end();
+    return;
 });
 
 app.get('/deleteSurvey/:surveyCode', (request, response) => {
@@ -140,6 +152,9 @@ app.get('/deleteSurvey/:surveyCode', (request, response) => {
     let code = request.params.surveyCode;
 
     console.log('delete ' + code);
+
+    response.end();
+    return;
 });
 
 app.get('/downloadSurveyData/:surveyCode', (request, response) => {
@@ -152,6 +167,9 @@ app.get('/downloadSurveyData/:surveyCode', (request, response) => {
     let code = request.params.surveyCode;
 
     console.log('download ' + code);
+
+    response.end();
+    return;
 })
 
 function GetSurveyData(directory) {
