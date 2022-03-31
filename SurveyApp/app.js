@@ -78,11 +78,12 @@ app.get('/dashboard', (request, response) => {
     const mySurveys = GetSurveyData('data/my_surveys');
     const publishedSurveys = GetSurveyData('data/published_surveys');
 
-    response.render('dashboard', {data : {mySurveys, publishedSurveys: publishedSurveys}});
+    response.render('dashboard', {data : {mySurveys, publishedSurveys}});
     response.end();
     return;
 });
 
+// publish survey
 app.get('/publishSurvey/:surveyCode', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
@@ -92,12 +93,15 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
     }
     let code = request.params.surveyCode;
 
-    console.log('publish ' + code);
+    // move file to published surveys directory
+    fs.renameSync('data/my_surveys/' + code + '.txt', 'data/published_surveys/' + code + '.txt');
+    response.redirect('/dashboard');
 
     response.end();
     return;
 });
 
+// unpublish survey
 app.get('/unpublishSurvey/:surveyCode', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
@@ -107,12 +111,15 @@ app.get('/unpublishSurvey/:surveyCode', (request, response) => {
     }
     let code = request.params.surveyCode;
 
-    console.log('unpublish ' + code);
+    // move file to my surveys directory
+    fs.renameSync('data/published_surveys/' + code + '.txt', 'data/my_surveys/' + code + '.txt');
+    response.redirect('/dashboard');
 
     response.end();
     return;
 });
 
+// create survey
 app.get('/createSurvey', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
@@ -121,12 +128,12 @@ app.get('/createSurvey', (request, response) => {
         return;
     }
 
-    console.log('create survey');
-
+    response.render('create');
     response.end();
     return;
 });
 
+// edit survey
 app.get('/editSurvey/:surveyCode', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
@@ -142,6 +149,7 @@ app.get('/editSurvey/:surveyCode', (request, response) => {
     return;
 });
 
+// delete survey
 app.get('/deleteSurvey/:surveyCode', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
@@ -151,12 +159,13 @@ app.get('/deleteSurvey/:surveyCode', (request, response) => {
     }
     let code = request.params.surveyCode;
 
-    console.log('delete ' + code);
-
+    fs.unlinkSync('data/my_surveys/' + code + '.txt');
+    response.redirect('/dashboard');
     response.end();
     return;
 });
 
+// download survey data
 app.get('/downloadSurveyData/:surveyCode', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
@@ -173,25 +182,25 @@ app.get('/downloadSurveyData/:surveyCode', (request, response) => {
 })
 
 function GetSurveyData(directory) {
-    const files = fs.readdirSync(directory);
     let fileArray = [];
-    files.forEach(file => {
-        let surveyCode = path.parse(file).name;
-        let content = fs.readFileSync(directory + '/' + file, 'utf-8');
-        let lineEnd = content.indexOf('\n');
-        let surveyName = content.substring(0, lineEnd);
+    
+    try {
+        const files = fs.readdirSync(directory);
+        files.forEach(file => {
+            let surveyCode = path.parse(file).name;
+            let content = fs.readFileSync(directory + '/' + file, 'utf-8');
+            let lineEnd = content.indexOf('\n');
+            let surveyName = content.substring(0, lineEnd);
 
-        let fileData = new FileData(surveyCode, surveyName);
-        fileArray.push(fileData);
-    });
-    return fileArray;
-}
-
-class FileData {
-    constructor(code, name) {
-        this.code = code;
-        this.name = name;
+            let fileData = new FileData(surveyCode, surveyName);
+            fileArray.push(fileData);
+        });
     }
+    catch(exception) {
+        console.log(exception);
+    }
+
+    return fileArray;
 }
 
 function authenticated(request, response) {
@@ -201,6 +210,13 @@ function authenticated(request, response) {
         return false;
     }
     return true;
+}
+
+class FileData {
+    constructor(code, name) {
+        this.code = code;
+        this.name = name;
+    }
 }
 
 const server = http.createServer(app);
