@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<!--
+	File Name: create.html
+	Date: 3/14/22
+-->
+<html lang="en">
+<head>
+	<title>Survey App | Create Survey Page</title>
+	<meta charset="utf-8">
+	<link rel="stylesheet" href="css/styles.css">
+
+    <script language="JavaScript">
+
+        function addQuestion() {
+            console.log('add question');
+            // add true/false question
+            var questionDiv = document.createElement('div');
+            questionDiv.setAttribute('class', 'question')
+            document.body.appendChild(questionDiv);    
+        
+            // true/false
+            var tfRadio = document.createElement('input');
+            tfRadio.setAttribute('type', 'radio');
+            tfRadio.setAttribute('name','questionType');
+            tfRadio.setAttribute('onclick', 'removeAllMC()');
+            questionDiv.appendChild(tfRadio);
+
+            var tfLabel = document.createElement('label');
+            tfLabel.innerHTML = 'T/F';
+            questionDiv.appendChild(tfLabel);
+
+            // multiple choice
+            var mcRadio = document.createElement('input');
+            mcRadio.setAttribute('type', 'radio');
+            mcRadio.setAttribute('name','questionType');
+            mcRadio.setAttribute('onclick', 'addMCResponse()');
+            questionDiv.appendChild(mcRadio);
+
+            var mcLabel = document.createElement('label');
+            mcLabel.innerHTML = 'Multiple Choice';
+            questionDiv.appendChild(mcLabel);
+
+            // free response
+            var frRadio = document.createElement('input');
+            frRadio.setAttribute('type', 'radio');
+            frRadio.setAttribute('name','questionType');
+            frRadio.setAttribute('onclick', 'removeAllMC()');
+            questionDiv.appendChild(frRadio);
+
+            var frLabel = document.createElement('label');
+            frLabel.innerHTML = 'Free Response';
+            questionDiv.appendChild(frLabel);
+
+            var delBtn = document.createElement('input');
+            delBtn.setAttribute('type', 'image');
+            delBtn.setAttribute('src', 'icons/minus_icon.png');
+            delBtn.setAttribute('alt', 'delete question');
+            delBtn.setAttribute('onclick', 'removeQuestion()');
+            questionDiv.appendChild(delBtn);
+
+            var questionField = document.createElement('input');
+            questionField.innerHTML = 'Enter question here';
+            questionField.setAttribute('type','text');
+            questionField.setAttribute('placeholder','Enter Question...');
+            questionDiv.appendChild(questionField);
+
+        }
+        //removes a question
+        function removeQuestion() {
+            console.log('remove question');
+
+        }
+        // adds a MC response
+        function addMCResponse() {
+            console.log('add response')
+        }
+
+        //removes a single MC respoonse
+        function removeMCResponse() {
+            console.log('remove response')
+        }
+
+        // removes all MC responses
+        function removeAllMC() {
+            console.log('remove all responses')
+        }
+
+    </script>
+</head>
+
+<body>
+     <!-- Add survey button -->
+     <input type="image" onclick="addQuestion()" src="icons/add_icon.png" alt="create survey" name="add icon">
+
+
+
+
+	<!-- <form>
+		<div class="TrueFalse">
+    			<label for="truefalse"><b>True/False</b></label>
+                <input type="text" placeholder="Enter Question" id="truefalse">
+    			<input type="radio" id="True" name="truefalse" value="true">
+                <input type="radio" id="False" name="truefalse" value="false">
+		</div>
+	</form>
+
+
+    <form>
+        <div class="MultipleChoice">
+            <label for="multiplechoice"><b>Multiple Choice</b></label>
+            <input type="text" placeholder="Enter Question" id="multiplechoice">
+            <input type="checkbox" id="option 1" name="option 1" value="option 1">
+            <label for="option 1"><input type="text" placeholder="Insert Text" id="insert text"></label>
+            <input type="checkbox" id="option 2" name="option 2" value="option 2">
+            <label for="option 2"><input type="text" placeholder="Insert Text" id="insert text"></label>
+            <input type="checkbox" id="option 3" name="option 3" value="option 3">
+            <label for="option 3"><input type="text" placeholder="Insert Text" id="insert text"></label>
+            <input type="checkbox" id="option 4" name="option 4" value="option 4">
+            <label for="option 4"><input type="text" placeholder="Insert Text" id="insert text"></label>
+        </div>
+    </form>
+    <form>
+        <div class="FreeResponse">
+            <label for="freeresponse"><b>Free Response</b></label>
+            <input type="text" placeholder="Enter Response" id="freeresponse" name="freeresponse">
+        </div>
+    </form> -->
+</body>
+</html>
