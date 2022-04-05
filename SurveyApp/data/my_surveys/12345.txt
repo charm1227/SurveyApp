@@ -1,5 +1,1 @@
-Color survey
-#7192516948, 7192516427
-?FR,"What is your name?"
-?TF,"Are you over 21?"
-?MC,"What is your favorite color?","red","blue","green"
+{"code":"12345","name":"Color survey","phoneNumbers":[7192516948,7193207891,2567589976],"questions":[{"type":"TF","question":"You have a favorite color?","responses":null},{"type":"FR","question":"Why is it your favorite color?","responses":null},{"type":"MC","question":"Choose your favorite color?","responses":["red","blue","green"]}],"askedQuestions":[{"type":"FR","question":"What is your name?","responses":null}]}

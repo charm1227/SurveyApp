@@ -1,5 +1,0 @@
-Color survey
-7192516948, 7192516427
-FR, What is your name?
-TF, Are you over 21?
-MC, What is your favorite color?, red, blue, green

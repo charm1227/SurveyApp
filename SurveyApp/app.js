@@ -30,13 +30,11 @@ app.get('/', (request, response) => {
     }
 
     response.redirect('/login');
-    return;
 });
 
 // load login page
 app.get('/login', (request, response) => {    
     response.sendFile(__dirname + '/views/login.html');
-    return;
 }); 
 
 // submit login
@@ -51,7 +49,6 @@ app.post('/submitLogin', (request, response) => {
     }
 
     response.redirect('/');
-    return;
 }); 
 
 // logout
@@ -64,7 +61,6 @@ app.get('/logout', (request, response) => {
     }
 
     response.redirect('/');
-    return;
 });
 
 // load dashboard page
@@ -72,16 +68,13 @@ app.get('/dashboard', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
         response.redirect('/');
-        response.end();
         return;
     }
 
-    const mySurveys = getAllSurveyHeaders('data/my_surveys');
-    const publishedSurveys = getAllSurveyHeaders('data/published_surveys');
+    const mySurveys = readAllSurveys('data/my_surveys');
+    const publishedSurveys = readAllSurveys('data/published_surveys');
 
     response.render('dashboard', {data : {mySurveys, publishedSurveys}});
-    response.end();
-    return;
 });
 
 // publish survey
@@ -89,7 +82,6 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
         response.redirect('/');
-        response.end();
         return;
     }
     let code = request.params.surveyCode;
@@ -98,11 +90,15 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
     fs.renameSync('data/my_surveys/' + code + '.txt', 'data/published_surveys/' + code + '.txt');
     response.redirect('/dashboard');
 
-    // generate take survey page
+    // GENERATE TAKE SURVEY PAGE
 
+    // how do we keep track of which questions have been asked?
 
-    response.end();
-    return;
+    // get survey data
+    // pass in survey questions
+    // create an ejs file | name=code
+    // h1 - survey name
+    // 
 });
 
 // unpublish survey
@@ -110,7 +106,6 @@ app.get('/unpublishSurvey/:surveyCode', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
         response.redirect('/');
-        response.end();
         return;
     }
     let code = request.params.surveyCode;
@@ -118,9 +113,6 @@ app.get('/unpublishSurvey/:surveyCode', (request, response) => {
     // move file to my surveys directory
     fs.renameSync('data/published_surveys/' + code + '.txt', 'data/my_surveys/' + code + '.txt');
     response.redirect('/dashboard');
-
-    response.end();
-    return;
 });
 
 // create survey
@@ -128,13 +120,25 @@ app.get('/createSurvey', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
         response.redirect('/');
-        response.end();
         return;
     }
 
+    // testing survey
+    // -----
+    survey = new Survey(
+        '12345', 
+        'Color survey', 
+        [7192516948, 7193207891, 2567589976],
+        [new Question('TF', 'You have a favorite color?', null),
+            new Question('FR', 'Why is it your favorite color?', null),
+            new Question('MC', 'Choose your favorite color?', ['red', 'blue', 'green'])],
+        [new Question('FR', 'What is your name?', null), ]
+        );
+
+    createSurvey(survey);
+    // -----
+
     response.render('create');
-    response.end();
-    return;
 });
 
 // edit survey
@@ -142,15 +146,9 @@ app.get('/editSurvey/:surveyCode', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
         response.redirect('/');
-        response.end();
         return;
     }
     let code = request.params.surveyCode;
-
-    console.log('edit ' + code);
-
-    response.end();
-    return;
 });
 
 // delete survey
@@ -158,15 +156,12 @@ app.get('/deleteSurvey/:surveyCode', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
         response.redirect('/');
-        response.end();
         return;
     }
     let code = request.params.surveyCode;
 
     fs.unlinkSync('data/my_surveys/' + code + '.txt');
     response.redirect('/dashboard');
-    response.end();
-    return;
 });
 
 // download survey data
@@ -174,21 +169,14 @@ app.get('/downloadSurveyData/:surveyCode', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
         response.redirect('/');
-        response.end();
         return;
     }
     let code = request.params.surveyCode;
-
-    console.log('download ' + code);
-
-    response.end();
-    return;
 });
 
 // load join survey page
 app.get('/join', (request, response) => {
     response.sendFile(__dirname + '/views/join.html');
-    return;
 });
 
 // submit join
@@ -202,80 +190,15 @@ app.get('/takeSurvey/:surveyCode', (request, response) => {
     let survey = getSurvey('data/published_surveys/' + code + '.txt');
 
     // load survey page
-    
-
-    response.end();
-    return;
 });
 
 // submit survey results
 app.get('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
     let code = request.params.surveyCode;
-
-    
 });
 
-function parseQuestion(questionLine) {
-    let questionParts = questionLine.split(',');
 
-    const type = questionParts[0].trim();
-    const ques = questionParts[1].trim();
-
-    let question = new Question(type, ques, null);
-    if(type == 'MC') {
-        let responses = [];
-        if(questionParts.length > 2) {
-            for(let i=2; i<questionParts.length; i++) {
-                responses.push(questionParts[i].trim());
-            }
-        }
-        question.responses = responses;
-    }
-    return question;
-}
-
-function parsePhoneNumbers(phoneNumbersLine) {
-    const phoneNumbers = phoneNumbersLine.split(',');
-    const trimmedPhoneNumbers = phoneNumbers.map(s => {
-        return s.trim();
-    });
-    return trimmedPhoneNumbers;
-}
-
-function getSurvey(filePath) {
-    let file = fs.readFileSync(filePath, 'utf-8');
-    file = file.trim();
-    const content = file.split('\n');
-
-    const code = path.parse(filePath).name;
-    const name = content[0];
-    const phoneNumbers = parsePhoneNumbers(content[1]);
-    let questions = [];
-
-    for(let i=2; i<content.length; i++) {
-        let question = parseQuestion(content[i]);
-        questions.push(question);
-    }
-
-    let survey = new Survey(code, name, phoneNumbers, questions);
-    return survey;
-}
-
-function getAllSurveyHeaders(directory) {
-    let surveyHeaders = [];
-    const files = fs.readdirSync(directory);
-    files.forEach(file => {
-        let surveyCode = path.parse(file).name;
-        let content = fs.readFileSync(directory + '/' + file, 'utf-8');
-        let lineEnd = content.indexOf('\n');
-        let surveyName = content.substring(0, lineEnd);
-
-        let surveyHeader = new SurveyHeader(surveyCode, surveyName);
-        surveyHeaders.push(surveyHeader);
-    });
-    return surveyHeaders;
-}
-
+// functions
 function authenticated(request, response) {
     let loggedIn = activeUser != null;
     let currentUser = JSON.stringify(activeUser) === JSON.stringify(request.socket.remoteAddress);
@@ -284,6 +207,45 @@ function authenticated(request, response) {
     }
     return true;
 }
+
+function createSurvey(survey) {
+    try {
+        const surveyString = JSON.stringify(survey);
+        fs.writeFileSync('data/my_surveys/' + survey.code + '.txt', surveyString);
+    }
+    catch(exception) {
+        console.log('cannot create survey ' + survey);
+    }
+}
+
+function readSurvey(filePath) {
+    try {
+        const surveyString = fs.readFileSync(filePath);
+        const survey = JSON.parse(surveyString);
+        return survey;
+    }
+    catch(exception) {
+        console.log('cannot read survey ' + filePath);
+    }
+}
+
+function readAllSurveys(directory) {
+    let surveys = [];
+    try {
+        const files = fs.readdirSync(directory);
+        files.forEach(file => {
+            const survey = readSurvey(directory + '/' + file);
+            surveys.push(survey);
+        });
+    }
+    catch(exception) {
+        console.log('cannot read surveys in ' + directory);
+    }
+    return surveys;
+}
+
+
+// models
 
 class Question {
     constructor(type, question, responses) {
@@ -294,18 +256,17 @@ class Question {
 }
 
 class Survey {
-    constructor(code, name, phoneNumbers, questions) {
+    constructor(code, name, phoneNumbers, questions, askedQuestions) {
         this.code = code;
         this.name = name;
         this.phoneNumbers = phoneNumbers;
         this.questions = questions;
+        this.askedQuestions = askedQuestions;
     }
-}
 
-class SurveyHeader {
-    constructor(code, name) {
-        this.code = code;
-        this.name = name;
+    getNextQuestion() {
+        // return next question
+        // move question to asked questions
     }
 }
 
