@@ -17,9 +17,9 @@
             <% data.mySurveys.forEach(survey => { %>
                 <div class="survey">
                     <label><%= survey.code + ' - ' + survey.name %></label>
-                    <input class = "buttonIcon" onclick="window.location.href = '/publishSurvey/<%= survey.code %>';" type="image" src="icons/upload_icon.png" alt="publish" name="upload icon"> %>
+                    <input class = "buttonIcon" onclick="window.location.href = '/publishSurvey/<%= survey.code %>';" type="image" src="icons/upload_icon.png" alt="publish" name="upload icon">
                     <input class = "buttonIcon" onclick="window.location.href = '/editSurvey/<%= survey.code %>';" type="image" src="icons/edit_icon.png" alt="edit" name="edit icon">
-                    <input class = "buttonIcon" onclick="window.location.href = '/deleteSurvey/<%= survey.code %>';" type="image" src="icons/trash_icon.png" alt="delete" name="trash icon">
+                    <input class = "buttonIcon" onclick="window.location.href = '/deleteSurvey/<%= survey.code %>';" type="image" src="icons/trash_icon.png" alt="delete" name="delete icon">
                 </div>
                 <br>
             <% }); %>

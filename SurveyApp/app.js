@@ -21,7 +21,7 @@ app.use(express.static(__dirname + '/public')); // make public directory accessi
 app.use(bodyParser.urlencoded({ extended: true })); // use body parser
 app.set('view engine', 'ejs');
 
-// load site
+// home
 app.get('/', (request, response) => {
     // check authentication
     if(authenticated(request, response)) {
@@ -32,7 +32,7 @@ app.get('/', (request, response) => {
     response.redirect('/login');
 });
 
-// load login page
+// display login page
 app.get('/login', (request, response) => {    
     response.sendFile(__dirname + '/views/login.html');
 }); 
@@ -48,7 +48,7 @@ app.post('/submitLogin', (request, response) => {
         return;
     }
 
-    response.redirect('/');
+    response.redirect('/login');
 }); 
 
 // logout
@@ -63,7 +63,7 @@ app.get('/logout', (request, response) => {
     response.redirect('/');
 });
 
-// load dashboard page
+// display dashboard page
 app.get('/dashboard', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
@@ -84,21 +84,16 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
         response.redirect('/');
         return;
     }
-    let code = request.params.surveyCode;
+    const code = request.params.surveyCode;
 
-    // move file to published surveys directory
+    // move file
     fs.renameSync('data/my_surveys/' + code + '.txt', 'data/published_surveys/' + code + '.txt');
+
+    // generate take survey page
+    fs.writeFileSync('survey_views/' + code + '.html', ''); 
+    updateSurveyPage(code);
+
     response.redirect('/dashboard');
-
-    // GENERATE TAKE SURVEY PAGE
-
-    // how do we keep track of which questions have been asked?
-
-    // get survey data
-    // pass in survey questions
-    // create an ejs file | name=code
-    // h1 - survey name
-    // 
 });
 
 // unpublish survey
@@ -108,10 +103,14 @@ app.get('/unpublishSurvey/:surveyCode', (request, response) => {
         response.redirect('/');
         return;
     }
-    let code = request.params.surveyCode;
+    const code = request.params.surveyCode;
 
     // move file to my surveys directory
     fs.renameSync('data/published_surveys/' + code + '.txt', 'data/my_surveys/' + code + '.txt');
+
+    // delete take survey page
+    fs.unlinkSync('survey_views/' + code + '.html');
+    
     response.redirect('/dashboard');
 });
 
@@ -148,7 +147,7 @@ app.get('/editSurvey/:surveyCode', (request, response) => {
         response.redirect('/');
         return;
     }
-    let code = request.params.surveyCode;
+    const code = request.params.surveyCode;
 });
 
 // delete survey
@@ -158,7 +157,7 @@ app.get('/deleteSurvey/:surveyCode', (request, response) => {
         response.redirect('/');
         return;
     }
-    let code = request.params.surveyCode;
+    const code = request.params.surveyCode;
 
     fs.unlinkSync('data/my_surveys/' + code + '.txt');
     response.redirect('/dashboard');
@@ -171,30 +170,42 @@ app.get('/downloadSurveyData/:surveyCode', (request, response) => {
         response.redirect('/');
         return;
     }
-    let code = request.params.surveyCode;
+    const code = request.params.surveyCode;
 });
 
-// load join survey page
+// display join page
 app.get('/join', (request, response) => {
     response.sendFile(__dirname + '/views/join.html');
 });
 
 // submit join
-app.get('/join/:surveyCode/:phoneNumber', (request, response) => {
+app.get('/joinSurvey/:surveyCode/:phoneNumber', (request, response) => {
 
 });
 
 // load take survey page
 app.get('/takeSurvey/:surveyCode', (request, response) => {
-    let code = request.params.surveyCode;
-    let survey = getSurvey('data/published_surveys/' + code + '.txt');
+    const code = request.params.surveyCode;
 
-    // load survey page
+    // if valid code, display survey take page
+    const validSurvey = isSurveyPublished(code);
+    if(validSurvey) {
+        response.sendFile(__dirname + '/survey_views/' + code + '.html');
+        return;
+    }
+
+    response.redirect('/error/The survey requested seems to be... well... not here.');
 });
 
 // submit survey results
 app.get('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
     let code = request.params.surveyCode;
+});
+
+// error page
+app.get('/error/:message', (request, response) => {
+    const message = request.params.message;
+    response.render('error', {'message' : message});
 });
 
 
@@ -214,18 +225,19 @@ function createSurvey(survey) {
         fs.writeFileSync('data/my_surveys/' + survey.code + '.txt', surveyString);
     }
     catch(exception) {
-        console.log('cannot create survey ' + survey);
+        console.log(exception);
     }
 }
 
 function readSurvey(filePath) {
     try {
         const surveyString = fs.readFileSync(filePath);
-        const survey = JSON.parse(surveyString);
+        const surveyObject = JSON.parse(surveyString);
+        const survey = Survey.createFrom(surveyObject);
         return survey;
     }
     catch(exception) {
-        console.log('cannot read survey ' + filePath);
+        console.log(exception);
     }
 }
 
@@ -239,18 +251,105 @@ function readAllSurveys(directory) {
         });
     }
     catch(exception) {
-        console.log('cannot read surveys in ' + directory);
+        console.log(exception);
     }
     return surveys;
 }
 
+function isSurveyPublished(surveyCode) {
+    let foundSurvey = false;
+    const publishedSurveys = readAllSurveys('data/published_surveys');
+    publishedSurveys.forEach(survey => {
+        if(surveyCode == survey.code) {
+            foundSurvey = true;
+        }
+    });
+
+    if(foundSurvey) {
+        return true;
+    }
+    return false;
+}
+
+function getPublishedSurvey(surveyCode) {
+    const survey = readSurvey('data/published_surveys/' + surveyCode + '.txt');
+    return survey;
+}
+
+function updateSurveyPage(surveyCode) {
+    // get survey object
+    let survey = getPublishedSurvey(surveyCode);
+
+    // generate html code
+    let pageCode = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <title>Survey App | Take Survey</title>
+            <meta charset="utf-8">
+            <link rel="stylesheet" href="css/styles.css">
+        </head>
+        <body>
+            <h1>${survey.name}</h1>
+            <form action='/submitResponse' method="POST">
+            <div class="question">`;
+
+            // generate questions
+            const questionCount = 3;
+            for(let i=1; i<=questionCount; i++) {
+                let question = survey.nextQuestion();
+                if(question != null) {
+                    // TF question
+                    if(question.type == 'TF') {
+                        pageCode += `<!-- T/F -->
+                            <div>
+                                <h3>${i}. ${question.text}</h3>
+                                <input type="radio" name="tf">
+                                <label>True</label>
+                                <input type="radio" name="tf">
+                                <label>False</label>
+                            </div>`;
+                    }
+                    // FR question
+                    else if(question.type == 'FR') {
+                        pageCode += `<!-- FR -->
+                            <div>
+                                <h3>${i}. ${question.text}</h3>
+                                <textarea rows="5" cols="60" name="fr" placeholder="Enter text..."></textarea>
+                            </div>`;
+                    }
+                    // MC question
+                    else if(question.type == 'MC') {
+                        pageCode += `<!-- MC -->
+                            <div>
+                                <h3>${i}. ${question.text}</h3>` 
+                        question.responses.forEach(response => {
+                            pageCode += `<input type="radio" name="mc">
+                            <label>${response}</label>`;
+                        });
+                        pageCode += `</div>`;
+                    }
+                }
+            }
+
+    pageCode += `
+                <br>
+                <button type="submit">Submit</button>
+            </div>
+            </form>
+        </body>
+        </html>`;
+    
+    // write to survey page
+    fs.writeFileSync('survey_views/' + surveyCode + '.html', pageCode);
+}
 
 // models
 
 class Question {
-    constructor(type, question, responses) {
+    constructor(type, text, responses) {
         this.type = type;
-        this.question = question;
+        this.text = text;
         this.responses = responses;
     }
 }
@@ -264,9 +363,18 @@ class Survey {
         this.askedQuestions = askedQuestions;
     }
 
-    getNextQuestion() {
-        // return next question
-        // move question to asked questions
+    static createFrom(survey) {
+        return new Survey(survey.code, survey.name, survey.phoneNumbers, survey.questions, survey.askedQuestions);
+    }
+
+    nextQuestion() {
+        if(this.questions.length > 0) {
+            let nextQuestion = this.questions[0];
+            this.questions.shift();
+            this.askedQuestions.push(nextQuestion);
+            return nextQuestion;
+        }
+        return null;
     }
 }
 
