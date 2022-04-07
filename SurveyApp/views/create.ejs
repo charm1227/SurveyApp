@@ -11,89 +11,115 @@
 
     <script language="JavaScript">
 
+        let questions = [];
+
         function addQuestion() {
-            console.log('add question');
-            // add true/false question
-            var questionDiv = document.createElement('div');
-            questionDiv.setAttribute('class', 'question')
-            document.body.appendChild(questionDiv);    
-        
-            // true/false
+            var surveyQuestionsList = document.getElementById('survey_questions_list');
+            const qIndex = questions.length;
+
+            // create question
+            var question = document.createElement('li');
+            question.class = 'question';
+            question.id = 'q' + qIndex;
+            surveyQuestionsList.appendChild(question);
+
+            //tf radio
             var tfRadio = document.createElement('input');
-            tfRadio.setAttribute('type', 'radio');
-            tfRadio.setAttribute('name','questionType');
-            tfRadio.setAttribute('onclick', 'removeAllMC()');
-            questionDiv.appendChild(tfRadio);
+            tfRadio.type = 'radio';
+            tfRadio.name = 'questionType' + qIndex;
+            tfRadio.onclick = 'tfSelected()';
+            tfRadio.checked = 'checked';
+            question.appendChild(tfRadio);
 
             var tfLabel = document.createElement('label');
-            tfLabel.innerHTML = 'T/F';
-            questionDiv.appendChild(tfLabel);
+            tfLabel.innerHTML = 'true/false';
+            question.appendChild(tfLabel);
 
-            // multiple choice
+            // mc radio
             var mcRadio = document.createElement('input');
-            mcRadio.setAttribute('type', 'radio');
-            mcRadio.setAttribute('name','questionType');
-            mcRadio.setAttribute('onclick', 'addMCResponse()');
-            questionDiv.appendChild(mcRadio);
+            mcRadio.type = 'radio';
+            mcRadio.name = 'questionType' + qIndex;
+            mcRadio.onclick = 'mcSelected()';
+            question.appendChild(mcRadio);
 
             var mcLabel = document.createElement('label');
-            mcLabel.innerHTML = 'Multiple Choice';
-            questionDiv.appendChild(mcLabel);
+            mcLabel.innerHTML = 'multiple choice';
+            question.appendChild(mcLabel);
 
-            // free response
+            // fr radio
             var frRadio = document.createElement('input');
-            frRadio.setAttribute('type', 'radio');
-            frRadio.setAttribute('name','questionType');
-            frRadio.setAttribute('onclick', 'removeAllMC()');
-            questionDiv.appendChild(frRadio);
+            frRadio.type = 'radio';
+            frRadio.name = 'questionType' + qIndex;
+            frRadio.onclick = 'frSelected()';
+            question.appendChild(frRadio);
 
             var frLabel = document.createElement('label');
-            frLabel.innerHTML = 'Free Response';
-            questionDiv.appendChild(frLabel);
+            frLabel.innerHTML = 'free response';
+            question.appendChild(frLabel);
 
-            var delBtn = document.createElement('input');
-            delBtn.setAttribute('type', 'image');
-            delBtn.setAttribute('src', 'icons/minus_icon.png');
-            delBtn.setAttribute('alt', 'delete question');
-            delBtn.setAttribute('onclick', 'removeQuestion()');
-            questionDiv.appendChild(delBtn);
-
+            // question field
             var questionField = document.createElement('input');
             questionField.innerHTML = 'Enter question here';
-            questionField.setAttribute('type','text');
-            questionField.setAttribute('placeholder','Enter Question...');
-            questionDiv.appendChild(questionField);
+            questionField.type = 'text';
+            questionField.placeholder = 'Enter Question...';
+            question.appendChild(questionField);
 
-        }
-        //removes a question
-        function removeQuestion() {
-            console.log('remove question');
+            // delete question button
+            var delBtn = document.createElement('input');
+            delBtn.type = 'image';
+            delBtn.src = 'icons/minus_icon.png';
+            delBtn.alt = 'delete question';
+            delBtn.addEventListener('click', () => {
+                deleteQuestion('q' + qIndex);
+            });
+            question.appendChild(delBtn);
 
+            questions.push(question);
         }
-        // adds a MC response
+
+        function deleteQuestion(id) {
+            var surveyQuestionsList = document.getElementById('survey_questions_list'); 
+            var question = document.getElementById(id);
+            question.remove();
+        }
+
+        function tfSelected() {
+            
+        }
+
+        function mcSelected() {
+            // add response (label and text field)
+            // genereate add response button
+        }
+
+        function frSelected() {
+            // clear 
+        }
+
         function addMCResponse() {
-            console.log('add response')
+            // label
+            // text field
+            // remove button
         }
 
-        //removes a single MC respoonse
         function removeMCResponse() {
             console.log('remove response')
         }
 
-        // removes all MC responses
-        function removeAllMC() {
+        function removeAllMCResponses() {
             console.log('remove all responses')
         }
-
     </script>
 </head>
 
 <body>
-     <!-- Add survey button -->
-     <input type="image" onclick="addQuestion()" src="icons/add_icon.png" alt="create survey" name="add icon">
-
-
-
+   
+    <ol id="survey_questions_list"></ol>
+    <br>
+    <div id="controls">
+        <input id="add_question" type="image" onclick="addQuestion()" src="icons/add_icon.png" alt="create survey" name="add icon">
+    </div>
+    <input type="submit" alt="submit">
 
 	<!-- <form>
 		<div class="TrueFalse">
@@ -103,8 +129,6 @@
                 <input type="radio" id="False" name="truefalse" value="false">
 		</div>
 	</form>
-
-
     <form>
         <div class="MultipleChoice">
             <label for="multiplechoice"><b>Multiple Choice</b></label>

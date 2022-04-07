@@ -90,7 +90,7 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
     fs.renameSync('data/my_surveys/' + code + '.txt', 'data/published_surveys/' + code + '.txt');
 
     // generate take survey page
-    fs.writeFileSync('survey_views/' + code + '.html', ''); 
+    fs.writeFileSync('views/survey_views/' + code + '.ejs', ''); 
     updateSurveyPage(code);
 
     // generate survey data file
@@ -117,7 +117,7 @@ app.get('/unpublishSurvey/:surveyCode', (request, response) => {
     fs.renameSync('data/published_surveys/' + code + '.txt', 'data/my_surveys/' + code + '.txt');
 
     // delete take survey page
-    fs.unlinkSync('survey_views/' + code + '.html');
+    fs.unlinkSync('views/survey_views/' + code + '.ejs');
 
     // delete survey data file
     fs.unlinkSync('data/survey_data/' + code + '.txt');
@@ -135,17 +135,17 @@ app.get('/createSurvey', (request, response) => {
 
     // testing survey
     // -----
-    survey = new Survey(
-        '12345', 
-        'Color survey', 
-        [7192516948, 7193207891, 2567589976],
-        [new Question('TF', 'You have a favorite color?', null),
-            new Question('FR', 'Why is it your favorite color?', null),
-            new Question('MC', 'Choose your favorite color?', ['red', 'blue', 'green'])],
-        [new Question('FR', 'What is your name?', null), ]
-        );
+    // survey = new Survey(
+    //     '12345', 
+    //     'Color survey', 
+    //     [7192516948, 7193207891, 2567589976],
+    //     [new Question('TF', 'You have a favorite color?', null),
+    //         new Question('FR', 'Why is it your favorite color?', null),
+    //         new Question('MC', 'Choose your favorite color?', ['red', 'blue', 'green'])],
+    //     [new Question('FR', 'What is your name?', null), ]
+    //     );
 
-    createSurvey(survey);
+    // createSurvey(survey);
     // -----
 
     response.render('create');
@@ -195,28 +195,39 @@ app.get('/joinSurvey/:surveyCode/:phoneNumber', (request, response) => {
 });
 
 // load take survey page
-app.get('/takeSurvey/:surveyCode', (request, response) => {
+app.get('/takeSurvey/:surveyCode/:phoneNumber', (request, response) => {
     const code = request.params.surveyCode;
+    const phoneNumber = request.params.phoneNumber;
 
-    // if valid code, display survey take page
+    // if valid code, display take survey page
     const validSurvey = isSurveyPublished(code);
     if(validSurvey) {
-        response.sendFile(__dirname + '/survey_views/' + code + '.html');
+        response.render('survey_views/' + code, {phoneNumber : phoneNumber});
         return;
     }
 
-    response.redirect('/error/The survey requested seems to be... well... not here.');
+    response.redirect('/message/Survey not found/The survey requested seems to be... well... not here.');
 });
 
 // submit survey results
-app.get('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
-    let code = request.params.surveyCode;
+app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
+    const code = request.params.surveyCode;
+    const phoneNumber = request.params.phoneNumber;
+
+    const data = request.body;
+    console.log(data);
+    
+    // write data to data file
+    // be conscious of simultaneous write sessions
+
+    response.redirect('/message/Survey submitted/Thanks for participating!');
 });
 
-// error page
-app.get('/error/:message', (request, response) => {
+// message page
+app.get('/message/:messageHeader/:message', (request, response) => {
+    const messageHeader = request.params.messageHeader;
     const message = request.params.message;
-    response.render('error', {'message' : message});
+    response.render('message', {data : {messageHeader, message}});
 });
 
 
@@ -302,7 +313,7 @@ function updateSurveyPage(surveyCode) {
         </head>
         <body>
             <h1>${survey.name}</h1>
-            <form action='/submitResponse' method="POST">
+            <form action='/submitResponse/${survey.code}/<%= phoneNumber %>' method="POST">
             <div class="question">`;
 
             // generate questions
@@ -315,9 +326,9 @@ function updateSurveyPage(surveyCode) {
                         pageCode += `<!-- T/F -->
                             <div>
                                 <h3>${i}. ${question.text}</h3>
-                                <input type="radio" name="tf">
+                                <input type="radio" name="${i}" value="true">
                                 <label>True</label>
-                                <input type="radio" name="tf">
+                                <input type="radio" name="${i}" value="false">
                                 <label>False</label>
                             </div>`;
                     }
@@ -326,7 +337,7 @@ function updateSurveyPage(surveyCode) {
                         pageCode += `<!-- FR -->
                             <div>
                                 <h3>${i}. ${question.text}</h3>
-                                <textarea rows="5" cols="60" name="fr" placeholder="Enter text..."></textarea>
+                                <textarea rows="5" cols="60" name="${i}" placeholder="Enter text..."></textarea>
                             </div>`;
                     }
                     // MC question
@@ -335,7 +346,7 @@ function updateSurveyPage(surveyCode) {
                             <div>
                                 <h3>${i}. ${question.text}</h3>` 
                         question.responses.forEach(response => {
-                            pageCode += `<input type="radio" name="mc">
+                            pageCode += `<input type="radio" name="${i}" value="${response}">
                             <label>${response}</label>`;
                         });
                         pageCode += `</div>`;
@@ -352,7 +363,7 @@ function updateSurveyPage(surveyCode) {
         </html>`;
     
     // write to survey page
-    fs.writeFileSync('survey_views/' + surveyCode + '.html', pageCode);
+    fs.writeFileSync('views/survey_views/' + surveyCode + '.ejs', pageCode);
 }
 
 // models

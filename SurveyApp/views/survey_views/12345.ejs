@@ -1,0 +1,34 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <title>Survey App | Take Survey</title>
+            <meta charset="utf-8">
+            <link rel="stylesheet" href="css/styles.css">
+        </head>
+        <body>
+            <h1>Color survey</h1>
+            <form action='/submitResponse/12345/<%= phoneNumber %>' method="POST">
+            <div class="question"><!-- T/F -->
+                            <div>
+                                <h3>1. You have a favorite color?</h3>
+                                <input type="radio" name="1" value="true">
+                                <label>True</label>
+                                <input type="radio" name="1" value="false">
+                                <label>False</label>
+                            </div><!-- FR -->
+                            <div>
+                                <h3>2. Why is it your favorite color?</h3>
+                                <textarea rows="5" cols="60" name="2" placeholder="Enter text..."></textarea>
+                            </div><!-- MC -->
+                            <div>
+                                <h3>3. Choose your favorite color?</h3><input type="radio" name="3" value="red">
+                            <label>red</label><input type="radio" name="3" value="blue">
+                            <label>blue</label><input type="radio" name="3" value="green">
+                            <label>green</label></div>
+                <br>
+                <button type="submit">Submit</button>
+            </div>
+            </form>
+        </body>
+        </html>
