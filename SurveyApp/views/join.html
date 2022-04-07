@@ -10,8 +10,10 @@
 
 	<label for="code"><b>Code</b></label>
 	<input type="number" placeholder="enter code..." name="code" required>
+	<label for="Phone"><b>Phone Number</b></label>
+	<input type="number" placeholder="enter a phone number..." name="phone" min="0000000000" max="9999999999" required>
 
-	<button type="submit" class="button">Join</button>
+	<button type="submit" class="button" onclick="authenticatecode()">Join</button>
 
 </body>
 </html>
