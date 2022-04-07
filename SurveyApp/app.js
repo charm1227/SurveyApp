@@ -93,6 +93,14 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
     fs.writeFileSync('survey_views/' + code + '.html', ''); 
     updateSurveyPage(code);
 
+    // generate survey data file
+    let survey = getPublishedSurvey(code);
+    let dataString = 'id';
+    survey.questions.forEach(question => {
+        dataString += ', ' + question.text;
+    });
+    fs.writeFileSync('data/survey_data/' + code + '.txt', dataString);
+
     response.redirect('/dashboard');
 });
 
@@ -110,6 +118,9 @@ app.get('/unpublishSurvey/:surveyCode', (request, response) => {
 
     // delete take survey page
     fs.unlinkSync('survey_views/' + code + '.html');
+
+    // delete survey data file
+    fs.unlinkSync('data/survey_data/' + code + '.txt');
     
     response.redirect('/dashboard');
 });
