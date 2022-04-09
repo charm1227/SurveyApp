@@ -14,140 +14,173 @@
         let questions = [];
 
         function addQuestion() {
-            var surveyQuestionsList = document.getElementById('survey_questions_list');
+            var surveyQuestions = document.getElementById('survey_questions');
             const qIndex = questions.length;
 
-            // create question
-            var question = document.createElement('li');
-            question.class = 'question';
-            question.id = 'q' + qIndex;
-            surveyQuestionsList.appendChild(question);
+            // create question container
+            var question_div = document.createElement('div');
+            question_div.id = 'q' + qIndex + '_div';
+            surveyQuestions.appendChild(question_div);
+
+            // create question list
+            var question_list = document.createElement('li');
+            question_list.class = 'question';
+            question_list.id = 'q' + qIndex;
+            question_div.appendChild(question_list);
 
             //tf radio
-            var tfRadio = document.createElement('input');
-            tfRadio.type = 'radio';
-            tfRadio.name = 'questionType' + qIndex;
-            tfRadio.onclick = 'tfSelected()';
-            tfRadio.checked = 'checked';
-            question.appendChild(tfRadio);
+            var tf_radio = document.createElement('input');
+            tf_radio.type = 'radio';
+            tf_radio.name = question_list.id + '_radio';
+            tf_radio.addEventListener('click', () => {
+                tfSelected(question_list.id);
+            });
+            tf_radio.checked = 'checked';
+            question_list.appendChild(tf_radio);
 
-            var tfLabel = document.createElement('label');
-            tfLabel.innerHTML = 'true/false';
-            question.appendChild(tfLabel);
+            // tf label
+            var tf_label = document.createElement('label');
+            tf_label.innerHTML = 'true/false';
+            question_list.appendChild(tf_label);
 
             // mc radio
-            var mcRadio = document.createElement('input');
-            mcRadio.type = 'radio';
-            mcRadio.name = 'questionType' + qIndex;
-            mcRadio.onclick = 'mcSelected()';
-            question.appendChild(mcRadio);
+            var mc_radio = document.createElement('input');
+            mc_radio.type = 'radio';
+            mc_radio.name = question_list.id + '_radio';
+            mc_radio.addEventListener('click', () => {
+                mcSelected(question_list.id);
+            });
+            question_list.appendChild(mc_radio);
 
-            var mcLabel = document.createElement('label');
-            mcLabel.innerHTML = 'multiple choice';
-            question.appendChild(mcLabel);
+            // mc label
+            var mc_label = document.createElement('label');
+            mc_label.innerHTML = 'multiple choice';
+            question_list.appendChild(mc_label);
 
             // fr radio
-            var frRadio = document.createElement('input');
-            frRadio.type = 'radio';
-            frRadio.name = 'questionType' + qIndex;
-            frRadio.onclick = 'frSelected()';
-            question.appendChild(frRadio);
+            var fr_radio = document.createElement('input');
+            fr_radio.type = 'radio';
+            fr_radio.name = question_list.id + '_radio';
+            fr_radio.addEventListener('click', () => {
+                frSelected(question_list.id);
+            });
+            question_list.appendChild(fr_radio);
 
-            var frLabel = document.createElement('label');
-            frLabel.innerHTML = 'free response';
-            question.appendChild(frLabel);
+            // fr label
+            var fr_label = document.createElement('label');
+            fr_label.innerHTML = 'free response';
+            question_list.appendChild(fr_label);
 
-            // question field
-            var questionField = document.createElement('input');
-            questionField.innerHTML = 'Enter question here';
-            questionField.type = 'text';
-            questionField.placeholder = 'Enter Question...';
-            question.appendChild(questionField);
+            // question text
+            var question_text = document.createElement('input');
+            question_text.type = 'text';
+            question_text.placeholder = 'Enter question...';
+            question_list.appendChild(question_text);
 
             // delete question button
-            var delBtn = document.createElement('input');
-            delBtn.type = 'image';
-            delBtn.src = 'icons/minus_icon.png';
-            delBtn.alt = 'delete question';
-            delBtn.addEventListener('click', () => {
-                deleteQuestion('q' + qIndex);
+            var delete_question_button = document.createElement('input');
+            delete_question_button.type = 'image';
+            delete_question_button.src = 'icons/minus_icon.png';
+            delete_question_button.alt = 'delete question';
+            delete_question_button.addEventListener('click', () => {
+                deleteQuestion(question_div.id);
             });
-            question.appendChild(delBtn);
+            question_div.appendChild(delete_question_button);
 
-            questions.push(question);
+            questions.push(question_list);
         }
 
-        function deleteQuestion(id) {
-            var surveyQuestionsList = document.getElementById('survey_questions_list'); 
-            var question = document.getElementById(id);
+        function deleteQuestion(qId) {
+            var question = document.getElementById(qId);
             question.remove();
         }
 
-        function tfSelected() {
-            
+        function tfSelected(qId) {
+            clearMC(qId);
         }
 
-        function mcSelected() {
-            // add response (label and text field)
-            // genereate add response button
+        function mcSelected(qId) {
+            var question = document.getElementById(qId);
+
+            // create mc container
+            var response_div = document.createElement('div'); 
+            response_div.id = qId + '_response_div';
+            question.appendChild(response_div);
+
+            // create mc list
+            var response_list = document.createElement('ol');
+            response_list.id = qId + 'response_list'
+            response_list.class = 'response_list';
+            response_div.appendChild(response_list);
+
+            addMCResponse(response_list.id);
+
+            // add response button
+            var add_response_button = document.createElement('input');
+            add_response_button.id = qId + '_add_button';
+            add_response_button.type = 'image';
+            add_response_button.src = 'icons/add_icon.png';
+            add_response_button.alt = 'add response';
+            add_response_button.addEventListener('click', () => {
+                addMCResponse(response_list.id);
+            });
+            response_div.appendChild(add_response_button);
         }
 
-        function frSelected() {
-            // clear 
+        function frSelected(qId) {
+            clearMC(qId);
         }
 
-        function addMCResponse() {
-            // label
-            // text field
-            // remove button
+        function addMCResponse(response_list_id) {
+            var responseList = document.getElementById(response_list_id);
+
+            // response container
+            var response_div = document.createElement('div');
+            response_div.id = response_list_id + '_r' + responseList.childElementCount + '_div';
+            responseList.appendChild(response_div);
+
+            // response
+            var response = document.createElement('li');
+            response.class = 'response';
+            response.id = response_list_id + '_r' + responseList.childElementCount;
+            response_div.appendChild(response);
+
+            // response text
+            var response_text = document.createElement('input');
+            response_text.type = 'text';
+            response_text.placeholder = 'Enter answer...';
+            response.appendChild(response_text);
+
+            // delete question button
+            var delete_question_button = document.createElement('input');
+            delete_question_button.type = 'image';
+            delete_question_button.src = 'icons/minus_icon.png';
+            delete_question_button.alt = 'delete response';
+            delete_question_button.addEventListener('click', () => {
+                deleteMCResponse(response_div.id);
+            });
+            response.appendChild(delete_question_button);
         }
 
-        function removeMCResponse() {
-            console.log('remove response')
+        function deleteMCResponse(rId) {
+            var response = document.getElementById(rId);
+            response.remove();
         }
 
-        function removeAllMCResponses() {
-            console.log('remove all responses')
+        function clearMC(qId) {
+            var mc_response_div = document.getElementById(qId + '_response_div');
+            mc_response_div.remove();
         }
+
     </script>
 </head>
 
 <body>
-   
-    <ol id="survey_questions_list"></ol>
+    <ol id="survey_questions"></ol>
     <br>
     <div id="controls">
         <input id="add_question" type="image" onclick="addQuestion()" src="icons/add_icon.png" alt="create survey" name="add icon">
     </div>
     <input type="submit" alt="submit">
-
-	<!-- <form>
-		<div class="TrueFalse">
-    			<label for="truefalse"><b>True/False</b></label>
-                <input type="text" placeholder="Enter Question" id="truefalse">
-    			<input type="radio" id="True" name="truefalse" value="true">
-                <input type="radio" id="False" name="truefalse" value="false">
-		</div>
-	</form>
-    <form>
-        <div class="MultipleChoice">
-            <label for="multiplechoice"><b>Multiple Choice</b></label>
-            <input type="text" placeholder="Enter Question" id="multiplechoice">
-            <input type="checkbox" id="option 1" name="option 1" value="option 1">
-            <label for="option 1"><input type="text" placeholder="Insert Text" id="insert text"></label>
-            <input type="checkbox" id="option 2" name="option 2" value="option 2">
-            <label for="option 2"><input type="text" placeholder="Insert Text" id="insert text"></label>
-            <input type="checkbox" id="option 3" name="option 3" value="option 3">
-            <label for="option 3"><input type="text" placeholder="Insert Text" id="insert text"></label>
-            <input type="checkbox" id="option 4" name="option 4" value="option 4">
-            <label for="option 4"><input type="text" placeholder="Insert Text" id="insert text"></label>
-        </div>
-    </form>
-    <form>
-        <div class="FreeResponse">
-            <label for="freeresponse"><b>Free Response</b></label>
-            <input type="text" placeholder="Enter Response" id="freeresponse" name="freeresponse">
-        </div>
-    </form> -->
 </body>
 </html>
