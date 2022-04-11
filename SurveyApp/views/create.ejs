@@ -1,8 +1,4 @@
 <!DOCTYPE html>
-<!--
-	File Name: create.html
-	Date: 3/14/22
--->
 <html lang="en">
 <head>
 	<title>Survey App | Create Survey Page</title>
@@ -10,32 +6,42 @@
 	<link rel="stylesheet" href="css/styles.css">
 
     <script language="JavaScript">
-
         let questions = [];
-
         function addQuestion() {
             var surveyQuestions = document.getElementById('survey_questions');
-            const qIndex = questions.length;
+            const qId = 'q' + questions.length;
 
             // create question container
             var question_div = document.createElement('div');
-            question_div.id = 'q' + qIndex + '_div';
+            question_div.id = qId + '_div';
             surveyQuestions.appendChild(question_div);
 
             // create question list
             var question_list = document.createElement('li');
             question_list.class = 'question';
-            question_list.id = 'q' + qIndex;
+            question_list.id = qId;
             question_div.appendChild(question_list);
+
+            tfClicked = false;
+            mcClicked = false;
+            frClicked = false;
 
             //tf radio
             var tf_radio = document.createElement('input');
             tf_radio.type = 'radio';
-            tf_radio.name = question_list.id + '_radio';
+            tf_radio.name = qId + '_type';
+            tf_radio.value = 'tf';
+            tf_radio.checked = 'checked';
+            tfClicked = true;
             tf_radio.addEventListener('click', () => {
+                if(tfClicked) {
+                    return;
+                }
+                tfClicked = true;
+                mcClicked = false;
+                frClicked = false;
                 tfSelected(question_list.id);
             });
-            tf_radio.checked = 'checked';
             question_list.appendChild(tf_radio);
 
             // tf label
@@ -46,8 +52,15 @@
             // mc radio
             var mc_radio = document.createElement('input');
             mc_radio.type = 'radio';
-            mc_radio.name = question_list.id + '_radio';
+            mc_radio.name = qId + '_type';
+            mc_radio.value = 'mc';
             mc_radio.addEventListener('click', () => {
+                if(mcClicked) {
+                    return;
+                }
+                mcClicked = true;
+                tfClicked = false;
+                frClicked = false;
                 mcSelected(question_list.id);
             });
             question_list.appendChild(mc_radio);
@@ -60,8 +73,15 @@
             // fr radio
             var fr_radio = document.createElement('input');
             fr_radio.type = 'radio';
-            fr_radio.name = question_list.id + '_radio';
+            fr_radio.name = qId + '_type';
+            fr_radio.value = 'fr';
             fr_radio.addEventListener('click', () => {
+                if(frClicked) {
+                    return;
+                }
+                frClicked = true;
+                mcClicked = false;
+                tfClicked = false;
                 frSelected(question_list.id);
             });
             question_list.appendChild(fr_radio);
@@ -73,12 +93,13 @@
 
             // question text
             var question_text = document.createElement('input');
+            question_text.name = qId + '_text';
             question_text.type = 'text';
             question_text.placeholder = 'Enter question...';
             question_list.appendChild(question_text);
 
             // delete question button
-            var delete_question_button = document.createElement('input');
+            var delete_question_button = document.createElement('img');
             delete_question_button.type = 'image';
             delete_question_button.src = 'icons/minus_icon.png';
             delete_question_button.alt = 'delete question';
@@ -89,17 +110,14 @@
 
             questions.push(question_list);
         }
-
         function deleteQuestion(qId) {
             var question = document.getElementById(qId);
             question.remove();
         }
-
         function tfSelected(qId) {
             clearMC(qId);
         }
-
-        function mcSelected(qId) {
+        function mcSelected(qId, switchingToMC) {
             var question = document.getElementById(qId);
 
             // create mc container
@@ -109,14 +127,14 @@
 
             // create mc list
             var response_list = document.createElement('ol');
-            response_list.id = qId + 'response_list'
+            response_list.id = qId + '_responses';
             response_list.class = 'response_list';
             response_div.appendChild(response_list);
 
             addMCResponse(response_list.id);
-
+        
             // add response button
-            var add_response_button = document.createElement('input');
+            var add_response_button = document.createElement('img');
             add_response_button.id = qId + '_add_button';
             add_response_button.type = 'image';
             add_response_button.src = 'icons/add_icon.png';
@@ -125,12 +143,11 @@
                 addMCResponse(response_list.id);
             });
             response_div.appendChild(add_response_button);
+        
         }
-
         function frSelected(qId) {
             clearMC(qId);
         }
-
         function addMCResponse(response_list_id) {
             var responseList = document.getElementById(response_list_id);
 
@@ -147,12 +164,13 @@
 
             // response text
             var response_text = document.createElement('input');
+            response_text.name = response_list_id;
             response_text.type = 'text';
             response_text.placeholder = 'Enter answer...';
             response.appendChild(response_text);
 
             // delete question button
-            var delete_question_button = document.createElement('input');
+            var delete_question_button = document.createElement('img');
             delete_question_button.type = 'image';
             delete_question_button.src = 'icons/minus_icon.png';
             delete_question_button.alt = 'delete response';
@@ -161,26 +179,29 @@
             });
             response.appendChild(delete_question_button);
         }
-
         function deleteMCResponse(rId) {
             var response = document.getElementById(rId);
             response.remove();
         }
-
         function clearMC(qId) {
             var mc_response_div = document.getElementById(qId + '_response_div');
             mc_response_div.remove();
         }
-
     </script>
 </head>
 
-<body>
-    <ol id="survey_questions"></ol>
-    <br>
-    <div id="controls">
-        <input id="add_question" type="image" onclick="addQuestion()" src="icons/add_icon.png" alt="create survey" name="add icon">
-    </div>
-    <input type="submit" alt="submit">
+<body onload="addQuestion()">
+    <form action="/createSurvey" method="POST">
+        <h3>Survey name</h3>
+        <input type="text" placeholder="Enter survey name..." name="survey_name" required>
+        
+        <h3>Questions</h3>
+        <ol id="survey_questions"></ol>
+        <br>
+        <div id="controls">
+            <img id="add_question" type="image" onclick="addQuestion()" src="icons/add_icon.png" alt="add question">
+        </div>
+        <button type="submit">Create</button>
+    </form>
 </body>
 </html>

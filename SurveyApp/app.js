@@ -21,6 +21,8 @@ app.use(express.static(__dirname + '/public')); // make public directory accessi
 app.use(bodyParser.urlencoded({ extended: true })); // use body parser
 app.set('view engine', 'ejs');
 
+// ROUTES
+
 // home
 app.get('/', (request, response) => {
     // check authentication
@@ -91,7 +93,7 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
 
     // generate take survey page
     fs.writeFileSync('views/survey_views/' + code + '.ejs', ''); 
-    updateSurveyPage(code);
+    updateTakeSurveyPage(code);
 
     // generate survey data file
     let survey = getPublishedSurvey(code);
@@ -125,7 +127,7 @@ app.get('/unpublishSurvey/:surveyCode', (request, response) => {
     response.redirect('/dashboard');
 });
 
-// create survey
+// display create survey page
 app.get('/createSurvey', (request, response) => {
     // check authentication
     if(!authenticated(request, response)) {
@@ -133,22 +135,56 @@ app.get('/createSurvey', (request, response) => {
         return;
     }
 
-    // testing survey
-    // -----
-    // survey = new Survey(
-    //     '12345', 
-    //     'Color survey', 
-    //     [7192516948, 7193207891, 2567589976],
-    //     [new Question('TF', 'You have a favorite color?', null),
-    //         new Question('FR', 'Why is it your favorite color?', null),
-    //         new Question('MC', 'Choose your favorite color?', ['red', 'blue', 'green'])],
-    //     [new Question('FR', 'What is your name?', null), ]
-    //     );
-
-    // createSurvey(survey);
-    // -----
-
     response.render('create');
+});
+
+// create survey
+app.post('/createSurvey', (request, response) => {
+    // check authentication
+    if(!authenticated(request, response)) {
+        response.redirect('/');
+        return;
+    }
+    const data = request.body;
+
+    let name = '';
+    let questions = [];
+    for(const key in data) {
+        value = data[key];
+
+        if(key == 'survey_name') {
+            name = value;
+        }
+        else {
+            // parse the key
+            let keyParts = key.split('_');
+            let qIndex = keyParts[0].replace('q', '');
+            let qDataType = keyParts[1];
+
+            // if no question, create question
+            if(qIndex >= questions.length) {
+                let newQuestion = new Question(null, null, null);
+                questions.push(newQuestion);
+            }
+
+            // assign the value to the question
+            if(qDataType == 'type') {
+                questions[qIndex].type = value;
+            }
+            else if(qDataType == 'text') {
+                questions[qIndex].text = value;
+            }
+            else if(qDataType == 'responses') {
+                questions[qIndex].responses = value;
+            }
+        }
+    }
+
+    const code = generateUniqueCode();
+    const newSurvey = new Survey(code, name, null, questions);
+    createSurvey(newSurvey);
+
+    response.redirect('dashboard');
 });
 
 // edit survey
@@ -231,7 +267,8 @@ app.get('/message/:messageHeader/:message', (request, response) => {
 });
 
 
-// functions
+// FUNCTIONS
+
 function authenticated(request, response) {
     let loggedIn = activeUser != null;
     let currentUser = JSON.stringify(activeUser) === JSON.stringify(request.socket.remoteAddress);
@@ -298,7 +335,7 @@ function getPublishedSurvey(surveyCode) {
     return survey;
 }
 
-function updateSurveyPage(surveyCode) {
+function updateTakeSurveyPage(surveyCode) {
     // get survey object
     let survey = getPublishedSurvey(surveyCode);
 
@@ -320,9 +357,15 @@ function updateSurveyPage(surveyCode) {
             const questionCount = 3;
             for(let i=1; i<=questionCount; i++) {
                 let question = survey.nextQuestion();
+
+                console.log(question);
+
                 if(question != null) {
+
+                    console.log('writing question');
+
                     // TF question
-                    if(question.type == 'TF') {
+                    if(question.type == 'tf') {
                         pageCode += `<!-- T/F -->
                             <div>
                                 <h3>${i}. ${question.text}</h3>
@@ -333,7 +376,7 @@ function updateSurveyPage(surveyCode) {
                             </div>`;
                     }
                     // FR question
-                    else if(question.type == 'FR') {
+                    else if(question.type == 'fr') {
                         pageCode += `<!-- FR -->
                             <div>
                                 <h3>${i}. ${question.text}</h3>
@@ -341,7 +384,7 @@ function updateSurveyPage(surveyCode) {
                             </div>`;
                     }
                     // MC question
-                    else if(question.type == 'MC') {
+                    else if(question.type == 'mc') {
                         pageCode += `<!-- MC -->
                             <div>
                                 <h3>${i}. ${question.text}</h3>` 
@@ -366,7 +409,30 @@ function updateSurveyPage(surveyCode) {
     fs.writeFileSync('views/survey_views/' + surveyCode + '.ejs', pageCode);
 }
 
-// models
+function generateUniqueCode() {
+    // get all codes
+    let codes = [];
+    const mySurveys = readAllSurveys('data/my_surveys');
+    mySurveys.forEach(survey => {
+        codes.push(survey.code);
+    });
+    const publishedSurveys = readAllSurveys('data/published_surveys');
+    publishedSurveys.forEach(survey => {
+        codes.push(survey.code);
+    });
+
+    // generate unique 4 digit code
+    let newCode = 0;
+    while(true) {
+        newCode = Math.floor(1000 + Math.random() * 9000);        
+        if(!codes.includes(newCode)) {
+            break;
+        }
+    }
+    return newCode;
+}
+
+// MODELS
 
 class Question {
     constructor(type, text, responses) {
@@ -377,12 +443,12 @@ class Question {
 }
 
 class Survey {
-    constructor(code, name, phoneNumbers, questions, askedQuestions) {
+    constructor(code, name, phoneNumbers, questions) {
         this.code = code;
         this.name = name;
         this.phoneNumbers = phoneNumbers;
         this.questions = questions;
-        this.askedQuestions = askedQuestions;
+        this.askedQuestions = [];
     }
 
     static createFrom(survey) {

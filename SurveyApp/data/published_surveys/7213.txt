@@ -1,0 +1,1 @@
+{"code":7213,"name":"Test survey","phoneNumbers":null,"questions":[{"type":"tf","text":"TF question","responses":null},{"type":"mc","text":"MC question","responses":["red","blue"]},{"type":"fr","text":"FR question","responses":null}],"askedQuestions":[]}

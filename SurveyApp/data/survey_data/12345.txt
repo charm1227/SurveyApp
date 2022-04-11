@@ -1,1 +1,0 @@
-id, You have a favorite color?, Why is it your favorite color?, Choose your favorite color?
