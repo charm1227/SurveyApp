@@ -454,7 +454,17 @@ function updateTakeSurveyPage(surveyCode) {
     fs.writeFileSync('views/survey_views/' + surveyCode + '.ejs', pageCode);
 }
 function generateUniqueCode() {
-    // get all codes
+    let codes = getAllSurveyCodes();
+    let newCode = 0;
+    while(true) {
+        newCode = Math.floor(1000 + Math.random() * 9000);        
+        if(!codes.includes(newCode)) {
+            break;
+        }
+    }
+    return newCode;
+}
+function getAllSurveyCodes() {
     let codes = [];
     const mySurveys = getAllSurveysIn('data/my_surveys');
     mySurveys.forEach(survey => {
@@ -464,16 +474,7 @@ function generateUniqueCode() {
     publishedSurveys.forEach(survey => {
         codes.push(survey.code);
     });
-
-    // generate unique 4 digit code
-    let newCode = 0;
-    while(true) {
-        newCode = Math.floor(1000 + Math.random() * 9000);        
-        if(!codes.includes(newCode)) {
-            break;
-        }
-    }
-    return newCode;
+    return codes;
 }
 
 // MODELS
