@@ -7,19 +7,21 @@
 </head>
 
 <body>
+	<form action="/joinSurvey" method="POST">
+		<label for="code"><b>Code</b></label>
+		<input type="number" placeholder="enter code..." name="code" required>
+		<label for="Phone"><b>Phone Number</b></label>
+		<input type="number" placeholder="enter a phone number..." name="phone" min="0000000000" max="9999999999" required>
+		<p>Please Select Your Service Provider</p>
+		<input type="radio" id="AT&T" name="service_provider" value="AT&T">
+		<label for="AT&T">AT&amp;T</label><br>
+		<input type="radio" id="Verizon" name="service_provider" value="Verizon">
+		<label for="Verizon">Verizon</label><br>
+		<input type="radio" id="T-Mobile" name="service_provider" value="T-Mobile">
+		<label for="T-Mobile">T-Mobile</label>	
 
-	<label for="code"><b>Code</b></label>
-	<input type="number" placeholder="enter code..." name="code" required>
-	<label for="Phone"><b>Phone Number</b></label>
-	<input type="number" placeholder="enter a phone number..." name="phone" min="0000000000" max="9999999999" required>
-	<p>Please Select Your Service Provider</p>
-	<input type="radio" id="AT&T" name="service_provider" value="AT&T">
-	<label for="AT&T">AT&amp;T</label><br>
-	<input type="radio" id="Verizon" name="service_provider" value="Verizon">
-	<label for="Verizon">Verizon</label><br>
-	<input type="radio" id="T-Mobile" name="service_provider" value="T-Mobile">
-	<label for="T-Mobile">T-Mobile</label>	
-	<button type="submit" class="button" onclick="authenticatecode()">Join</button>
+		<button type="submit" class="button" onclick="authenticatecode()">Join</button>
+	</form>
 
 </body>
 </html>
