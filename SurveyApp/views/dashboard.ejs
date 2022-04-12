@@ -36,8 +36,9 @@
             <% data.publishedSurveys.forEach(survey => { %>
                 <div class="survey">
                     <label><%= survey.code + ' - ' + survey.name %></label>
-                    <input class = "buttonIcon" onclick="window.location.href = '/downloadSurveyData/<%= survey.code %>';" type="image" src="icons/download_icon.png" alt="download" name="download icon">
-                    <input class = "buttonIcon" onclick="window.location.href = '/unpublishSurvey/<%= survey.code %>';" type="image" src="icons/minus_icon.png" alt="unpublish" name="minus icon">
+                    <input class="buttonIcon" onclick="window.location.href = '/downloadSurveyData/<%= survey.code %>';" type="image" src="icons/download_icon.png" alt="download" name="download icon">
+                    <input class="buttonIcon" onclick="window.location.href = '/unpublishSurvey/<%= survey.code %>';" type="image" src="icons/minus_icon.png" alt="unpublish" name="minus icon">
+                    <input class="buttonIcon" onclick="window.location.href = '/push/<%= survey.code %>';" type="image" src="icons/mail_icon.png" alt="push" name="push icon">
                 </div>
                 <br>
             <% }); %>

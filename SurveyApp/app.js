@@ -155,25 +155,29 @@ app.post('/joinSurvey', (request, response) => {
     const code = request.body.code;
     const phoneNumber = request.body.phone;
     const provider = request.body.service_provider;
+    let survey = getPublishedSurvey(code);
 
     // authenticate the code
-    codes = getAllPublishedSurveyCodes();
-    let validCode = false;
-    codes.forEach(c => {
-        if(code == c) {
-            validCode = true;
-        }
-    });
+    let validCode = isValidPublishedSurveyCode(code);
     if(!validCode) {
         response.redirect('/message/Unable to join survey/Survey code does not exist')
         return;
     }
 
+    // authenticate phone number
+    let validPhone = true;
+    survey.phones.forEach(p => {
+        if(phoneNumber == p.number) {
+            validPhone = false;
+        }
+    });
+    if(!validPhone) {
+        response.redirect('/message/Survey already joined/No need to join twice.')
+        return;
+    }
+
     // add the phone to the survey
     const phone = new Phone(phoneNumber, provider);
-
-    // get survey, add phone to it
-    let survey = getPublishedSurvey(code);
 
     console.log('-------------------');
     console.log('before');
@@ -187,6 +191,25 @@ app.post('/joinSurvey', (request, response) => {
     console.log(survey);
 
     response.redirect('/message/Survey Joined/Successfully Joined Survey, Wait for a Text and You can Take a Survey!')
+});
+
+// push survey burst
+app.get('/push/:surveyCode', (request, response) => {
+    if(!authenticated(request, response)) {
+        response.redirect('/');
+        return;
+    }
+    const code = request.params.surveyCode;
+
+    // validate code - needs to published survey
+    let validCode = isValidPublishedSurveyCode(code);
+    if(!validCode) {
+        response.redirect('/message/Unable to push survey/Survey code was not valid')
+        return;
+    }
+
+    route_pushSurveyBurst(code);
+    response.redirect('/message/Successful survey burst push/The next set of questions have been pushed successfully.')
 });
 
 // load take survey page
@@ -234,6 +257,16 @@ function authenticated(request, response) {
         return false;
     }
     return true;
+}
+function isValidPublishedSurveyCode(code) {
+    let codes = getAllPublishedSurveyCodes();
+    let validCode = false;
+    codes.forEach(c => {
+        if(code == c) {
+            validCode = true;
+        }
+    });
+    return validCode;
 }
 
 // survey management
@@ -347,6 +380,10 @@ function route_submitSurveyResponse(code, phoneNumber, data) {
 
     // store survey data
     writeSurveyData(surveyData);
+}
+function route_pushSurveyBurst(code) {
+    updateTakeSurveyPage(code);
+    sendNotification();
 }
 
 function writeSurvey(survey, file) {
@@ -517,6 +554,14 @@ function getAllPublishedSurveyCodes() {
         codes.push(survey.code);
     }); 
     return codes;
+}
+
+// email
+function sendNotification() {
+
+}
+function unsubscribe() {
+
 }
 
 // MODELS
