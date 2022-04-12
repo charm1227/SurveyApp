@@ -151,8 +151,11 @@ app.get('/join', (request, response) => {
 });
 
 // submit join
-app.get('/joinSurvey/:surveyCode/:phoneNumber', (request, response) => {
-
+app.post('/joinSurvey', (request, response) => {
+    const code = request.body.code;
+    const phoneNumber = request.body.phoneNumber;
+    const service_provider = request.body.service_provider;
+    response.redirect('/message/Survey Joined/Successfully Joined Survey, Wait for a Text and You can Take a Survey!')
 });
 
 // load take survey page
