@@ -1,1 +1,0 @@
-id, Do you like cats?, Do you own a cat?, How many cats do you have?, Do you like having cat(s)?, Describe your experience owning cats.

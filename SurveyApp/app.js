@@ -153,8 +153,39 @@ app.get('/join', (request, response) => {
 // submit join
 app.post('/joinSurvey', (request, response) => {
     const code = request.body.code;
-    const phoneNumber = request.body.phoneNumber;
-    const service_provider = request.body.service_provider;
+    const phoneNumber = request.body.phone;
+    const provider = request.body.service_provider;
+
+    // authenticate the code
+    codes = getAllPublishedSurveyCodes();
+    let validCode = false;
+    codes.forEach(c => {
+        if(code == c) {
+            validCode = true;
+        }
+    });
+    if(!validCode) {
+        response.redirect('/message/Unable to join survey/Survey code does not exist')
+        return;
+    }
+
+    // add the phone to the survey
+    const phone = new Phone(phoneNumber, provider);
+
+    // get survey, add phone to it
+    let survey = getPublishedSurvey(code);
+
+    console.log('-------------------');
+    console.log('before');
+    console.log(survey);
+
+    survey.addPhone(phone);
+    writeSurvey(survey, 'data/published_surveys/' + code + '.txt');
+
+    console.log('---------');
+    console.log('after');
+    console.log(survey);
+
     response.redirect('/message/Survey Joined/Successfully Joined Survey, Wait for a Text and You can Take a Survey!')
 });
 
@@ -241,8 +272,8 @@ function route_createSurveyFromForm(body) {
     }
 
     const code = generateUniqueCode();
-    const newSurvey = new Survey(code, name, null, questions);
-    createSurvey(newSurvey);
+    const survey = new Survey(code, name, [], questions, []);
+    writeSurvey(survey, 'data/my_surveys/' + survey.code + '.txt');
 }
 function route_publishSurvey(code) {
     // move survey
@@ -318,10 +349,10 @@ function route_submitSurveyResponse(code, phoneNumber, data) {
     writeSurveyData(surveyData);
 }
 
-function createSurvey(survey) {
+function writeSurvey(survey, file) {
     try {
         const surveyString = JSON.stringify(survey);
-        fs.writeFileSync('data/my_surveys/' + survey.code + '.txt', surveyString);
+        fs.writeFileSync(file, surveyString);
     }
     catch(exception) {
         console.log(exception);
@@ -479,6 +510,14 @@ function getAllSurveyCodes() {
     });
     return codes;
 }
+function getAllPublishedSurveyCodes() {
+    let codes = [];
+    const publishedSurveys = getAllSurveysIn('data/published_surveys');
+    publishedSurveys.forEach(survey => {
+        codes.push(survey.code);
+    }); 
+    return codes;
+}
 
 // MODELS
 class Question {
@@ -488,19 +527,26 @@ class Question {
         this.responses = responses;
     }
 }
+class Phone {
+    constructor(number, provider) {
+        this.number = number;
+        this.provider = provider;
+    }
+}
 class Survey {
-    constructor(code, name, phoneNumbers, questions) {
+    constructor(code, name, phones, questions, askedQuestions) {
         this.code = code;
         this.name = name;
-        this.phoneNumbers = phoneNumbers;
+        this.phones = phones;
         this.questions = questions;
-        this.askedQuestions = [];
+        this.askedQuestions = askedQuestions;
     }
-
     static createFrom(survey) {
-        return new Survey(survey.code, survey.name, survey.phoneNumbers, survey.questions, survey.askedQuestions);
+        return new Survey(survey.code, survey.name, survey.phones, survey.questions, survey.askedQuestions);
     }
-
+    addPhone(phone) {
+        this.phones.push(phone);
+    }
     nextQuestion() {
         const hasNextQuestion = this.questions.length > 0;
         if(hasNextQuestion) {
@@ -511,7 +557,6 @@ class Survey {
         }
         return null;
     }
-
     getAskedQuestionsCount() {
         return this.askedQuestions.length;
     }

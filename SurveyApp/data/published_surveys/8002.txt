@@ -1,0 +1,1 @@
+{"code":8002,"name":"test survey","phones":[{"number":"1112223333","provider":"AT&T"},{"number":"1112223334","provider":"AT&T"}],"questions":[{"type":"tf","text":"is this true","responses":null},{"type":"tf","text":"is this false","responses":null},{"type":"mc","text":"which pill","responses":["red","blue"]},{"type":"fr","text":"why","responses":null}],"askedQuestions":[]}

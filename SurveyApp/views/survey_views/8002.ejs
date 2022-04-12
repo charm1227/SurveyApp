@@ -7,28 +7,27 @@
             <link rel="stylesheet" href="css/styles.css">
         </head>
         <body>
-            <h1>Cat survey</h1>
-            <form action='/submitResponse/4582/<%= phoneNumber %>' method="POST">
+            <h1>test survey</h1>
+            <form action='/submitResponse/8002/<%= phoneNumber %>' method="POST">
             <div class="question"><!-- T/F -->
                             <div>
-                                <h3>1. Do you like cats?</h3>
+                                <h3>1. is this true</h3>
                                 <input type="radio" name="1" value="true">
                                 <label>True</label>
                                 <input type="radio" name="1" value="false">
                                 <label>False</label>
                             </div><!-- T/F -->
                             <div>
-                                <h3>2. Do you own a cat?</h3>
+                                <h3>2. is this false</h3>
                                 <input type="radio" name="2" value="true">
                                 <label>True</label>
                                 <input type="radio" name="2" value="false">
                                 <label>False</label>
                             </div><!-- MC -->
                             <div>
-                                <h3>3. How many cats do you have?</h3><input type="radio" name="3" value="none">
-                            <label>none</label><input type="radio" name="3" value="1">
-                            <label>1</label><input type="radio" name="3" value="2 or more">
-                            <label>2 or more</label></div>
+                                <h3>3. which pill</h3><input type="radio" name="3" value="red">
+                            <label>red</label><input type="radio" name="3" value="blue">
+                            <label>blue</label></div>
                 <br>
                 <button type="submit">Submit</button>
             </div>
