@@ -17,7 +17,7 @@
             <% data.mySurveys.forEach(survey => { %>
                 <div class="survey">
                     <label class="surveyCode"><%= survey.code %></label>
-                    <label> - <%= survey.name %></label>
+                    <label><%= survey.name %></label>
                     <input class="buttonIcon" onclick="window.location.href = '/editSurvey/<%= survey.code %>';" type="image" src="icons/edit.png" alt="edit" name="edit icon">
                     <input class="buttonIcon" onclick="window.location.href = '/publishSurvey/<%= survey.code %>';" type="image" src="icons/rocket.png" alt="publish" name="upload icon">
                     <input class="buttonIcon" onclick="window.location.href = '/deleteSurvey/<%= survey.code %>';" type="image" src="icons/trash.png" alt="delete" name="delete icon">
@@ -37,7 +37,7 @@
             <% data.publishedSurveys.forEach(survey => { %>
                 <div class="survey">
                     <label class="surveyCode"><%= survey.code %></label>
-                    <label> - <%= survey.name %></label>
+                    <label><%= survey.name %></label>
                     <input class="buttonIcon" onclick="window.location.href = '/downloadSurveyData/<%= survey.code %>';" type="image" src="icons/download.png" alt="download" name="download icon">
                     <input class="buttonIcon" onclick="window.location.href = '/push/<%= survey.code %>';" type="image" src="icons/bell-ring.png" alt="push" name="push icon">
                     <input class="buttonIcon" onclick="window.location.href = '/unpublishSurvey/<%= survey.code %>';" type="image" src="icons/x.png" alt="unpublish" name="minus icon">
