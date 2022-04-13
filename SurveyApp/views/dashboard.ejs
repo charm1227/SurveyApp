@@ -16,16 +16,17 @@
             <!-- My surveys -->
             <% data.mySurveys.forEach(survey => { %>
                 <div class="survey">
-                    <label><%= survey.code + ' - ' + survey.name %></label>
-                    <input class = "buttonIcon" onclick="window.location.href = '/publishSurvey/<%= survey.code %>';" type="image" src="icons/upload_icon.png" alt="publish" name="upload icon">
-                    <input class = "buttonIcon" onclick="window.location.href = '/editSurvey/<%= survey.code %>';" type="image" src="icons/edit_icon.png" alt="edit" name="edit icon">
-                    <input class = "buttonIcon" onclick="window.location.href = '/deleteSurvey/<%= survey.code %>';" type="image" src="icons/trash_icon.png" alt="delete" name="delete icon">
+                    <label class="surveyCode"><%= survey.code %></label>
+                    <label> - <%= survey.name %></label>
+                    <input class="buttonIcon" onclick="window.location.href = '/editSurvey/<%= survey.code %>';" type="image" src="icons/pencil.png" alt="edit" name="edit icon">
+                    <input class="buttonIcon" onclick="window.location.href = '/publishSurvey/<%= survey.code %>';" type="image" src="icons/rocket.png" alt="publish" name="upload icon">
+                    <input class="buttonIcon" onclick="window.location.href = '/deleteSurvey/<%= survey.code %>';" type="image" src="icons/trash.png" alt="delete" name="delete icon">
                 </div>
                 <br>
             <% }); %>
 
             <!-- Add survey button -->
-            <input type="image" onclick="window.location.href = '/createSurvey';" src="icons/add_icon.png" alt="create survey" name="add icon">
+            <input class="largeButtonIcon" onclick="window.location.href = '/createSurvey'; "type="image"  src="icons/add.png" alt="create survey" name="add icon">
 
         </div>
         
@@ -35,10 +36,11 @@
             <!-- Published surveys -->
             <% data.publishedSurveys.forEach(survey => { %>
                 <div class="survey">
-                    <label><%= survey.code + ' - ' + survey.name %></label>
-                    <input class="buttonIcon" onclick="window.location.href = '/downloadSurveyData/<%= survey.code %>';" type="image" src="icons/download_icon.png" alt="download" name="download icon">
-                    <input class="buttonIcon" onclick="window.location.href = '/unpublishSurvey/<%= survey.code %>';" type="image" src="icons/minus_icon.png" alt="unpublish" name="minus icon">
-                    <input class="buttonIcon" onclick="window.location.href = '/push/<%= survey.code %>';" type="image" src="icons/mail_icon.png" alt="push" name="push icon">
+                    <label class="surveyCode"><%= survey.code %></label>
+                    <label> - <%= survey.name %></label>
+                    <input class="buttonIcon" onclick="window.location.href = '/downloadSurveyData/<%= survey.code %>';" type="image" src="icons/download.png" alt="download" name="download icon">
+                    <input class="buttonIcon" onclick="window.location.href = '/push/<%= survey.code %>';" type="image" src="icons/mail.png" alt="push" name="push icon">
+                    <input class="buttonIcon" onclick="window.location.href = '/unpublishSurvey/<%= survey.code %>';" type="image" src="icons/x.png" alt="unpublish" name="minus icon">
                 </div>
                 <br>
             <% }); %>

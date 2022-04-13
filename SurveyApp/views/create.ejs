@@ -94,6 +94,7 @@
             // question text
             var question_text = document.createElement('input');
             question_text.name = qId + '_text';
+            question_text.required = true;
             question_text.type = 'text';
             question_text.placeholder = 'Enter question...';
             question_list.appendChild(question_text);
@@ -101,7 +102,8 @@
             // delete question button
             var delete_question_button = document.createElement('img');
             delete_question_button.type = 'image';
-            delete_question_button.src = 'icons/minus_icon.png';
+            delete_question_button.className = 'buttonIcon';
+            delete_question_button.src = 'icons/x.png';
             delete_question_button.alt = 'delete question';
             delete_question_button.addEventListener('click', () => {
                 deleteQuestion(question_div.id);
@@ -136,8 +138,9 @@
             // add response button
             var add_response_button = document.createElement('img');
             add_response_button.id = qId + '_add_button';
+            add_response_button.className = 'buttonIcon';
             add_response_button.type = 'image';
-            add_response_button.src = 'icons/add_icon.png';
+            add_response_button.src = 'icons/add.png';
             add_response_button.alt = 'add response';
             add_response_button.addEventListener('click', () => {
                 addMCResponse(response_list.id);
@@ -165,6 +168,7 @@
             // response text
             var response_text = document.createElement('input');
             response_text.name = response_list_id;
+            response_text.required = true;
             response_text.type = 'text';
             response_text.placeholder = 'Enter answer...';
             response.appendChild(response_text);
@@ -172,7 +176,8 @@
             // delete question button
             var delete_question_button = document.createElement('img');
             delete_question_button.type = 'image';
-            delete_question_button.src = 'icons/minus_icon.png';
+            delete_question_button.className = "buttonIcon";
+            delete_question_button.src = 'icons/x.png';
             delete_question_button.alt = 'delete response';
             delete_question_button.addEventListener('click', () => {
                 deleteMCResponse(response_div.id);
@@ -199,9 +204,9 @@
         <ol id="survey_questions"></ol>
         <br>
         <div id="controls">
-            <img id="add_question" type="image" onclick="addQuestion()" src="icons/add_icon.png" alt="add question">
+            <img id="add_question" class="largeButtonIcon" type="image" onclick="addQuestion()" src="icons/add.png" alt="add question">
         </div>
-        <button type="submit">Create</button>
+        <button type="submit">Done</button>
     </form>
 </body>
 </html>
