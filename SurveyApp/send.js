@@ -7,16 +7,12 @@ module.exports.sendMail = async () => {
     const time = new Date().toDateString();
     let info = await transporter.sendMail({
       from: SEND_MAIL_CONFIG.auth.user,
-      to: SEND_MAIL_CONFIG.auth.user,
-      subject: 'Hello ✔',
+      to: SEND_MAIL_CONFIG.,
+      subject: 'Notification',
       html: `
-      <div
-        class="container"
-        style="max-width: 90%; margin: auto; padding-top: 20px"
-      >
-        <h2>This is a testing email</h2>
-        <p>Please ignore this mail</p>
-        <p>sent at ${time}</p>
+        <h2>Time to take your survey</h2>
+        <p>Access it here!</p>
+        <p></p>
       </div>
     `,
     });
