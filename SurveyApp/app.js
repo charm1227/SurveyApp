@@ -8,6 +8,9 @@ const fs = require('fs');
 const bcrypt = require('bcrypt');
 const { debug } = require('console');
 const { closeDelimiter } = require('ejs');
+require('dotenv').config();
+const { sendMail } = require('./send');
+const { readMail } = require('./read');
 
 let activeUser = null;
 
