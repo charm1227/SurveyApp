@@ -558,10 +558,10 @@ function getAllPublishedSurveyCodes() {
 
 // email
 function sendNotification() {
-
+    sendMail();
 }
 function unsubscribe() {
-
+    setInterval(readMail(), 30000);
 }
 
 // MODELS
