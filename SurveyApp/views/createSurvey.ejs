@@ -7,6 +7,7 @@
 
     <script language="JavaScript">
         let questions = [];
+        let elements = [];
         function addQuestion() {
             var surveyQuestions = document.getElementById('survey_questions');
             const qId = 'q' + questions.length;
@@ -126,12 +127,14 @@
             var response_div = document.createElement('div'); 
             response_div.id = qId + '_response_div';
             question.appendChild(response_div);
+            elements.push(response_div);
 
             // create mc list
             var response_list = document.createElement('ol');
             response_list.id = qId + '_responses';
             response_list.class = 'response_list';
             response_div.appendChild(response_list);
+            elements.push(response_list);
 
             addMCResponse(response_list.id);
         
@@ -146,6 +149,7 @@
                 addMCResponse(response_list.id);
             });
             response_div.appendChild(add_response_button);
+            elements.push(add_response_button);
         
         }
         function frSelected(qId) {
@@ -196,7 +200,7 @@
 </head>
 
 <body onload="addQuestion()">
-    <form action="/createSurvey" method="POST">
+    <form action="/submitCreateSurvey" method="POST">
         <h3>Survey name</h3>
         <input type="text" placeholder="Enter survey name..." name="survey_name" required>
         

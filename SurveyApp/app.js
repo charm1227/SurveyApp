@@ -15,31 +15,25 @@ let activeUser = null;
 // ---------
 let username = 'admin';
 let password = 'password';
-
-const burstQuestionCount = 3;
+const pushQuestionCount = 3;
 // ---------
 
 app.use(express.static(__dirname + '/public')); // make public directory accessible to client
 app.use(bodyParser.urlencoded({ extended: true })); // use body parser
 app.set('view engine', 'ejs');
 
-// ROUTES
+// ----- ROUTES -----
 
-// home
 app.get('/', (request, response) => {
-    if(authenticated(request, response)) {
-        response.redirect('/dashboard');
+    if(!authorized(request)) {
+        response.redirect('/login');
         return;
     }
-    response.redirect('/login');
+    response.redirect('/dashboard');
 });
-
-// display login page
-app.get('/login', (request, response) => {    
+app.get('/login', (request, response) => {   
     response.sendFile(__dirname + '/views/login.html');
 }); 
-
-// submit login
 app.post('/submitLogin', (request, response) => {
     let validUsername = username == request.body.username;
     let validPassword = password == request.body.password;
@@ -50,232 +44,62 @@ app.post('/submitLogin', (request, response) => {
     }
     response.redirect('/login');
 }); 
-
-// logout
 app.get('/logout', (request, response) => {
-    if(authenticated(request, response)) {
-        activeUser = null;
-        response.redirect('/login');
-        return;
-    }
-    response.redirect('/');
-});
-
-// display dashboard page
-app.get('/dashboard', (request, response) => {
-    if(!authenticated(request, response)) {
+    if(!authorized(request)) {
         response.redirect('/');
         return;
     }
-    const mySurveys = getAllSurveysIn('data/my_surveys');
-    const publishedSurveys = getAllSurveysIn('data/published_surveys');
+    activeUser = null;
+    response.redirect('/login');
+});
+app.get('/dashboard', (request, response) => {
+    if(!authorized(request)) {
+        response.redirect('/');
+        return;
+    }
+    let mySurveys = getAllSurveysIn('data/my_surveys');
+    let publishedSurveys = getAllSurveysIn('data/published_surveys');
     response.render('dashboard', {data : {mySurveys, publishedSurveys}});
 });
-
-// publish survey
 app.get('/publishSurvey/:surveyCode', (request, response) => {
-    if(!authenticated(request, response)) {
+    if(!authorized(request)) {
         response.redirect('/');
         return;
     }
     const code = request.params.surveyCode;
-    route_publishSurvey(code);    
+    let survey = getSurvey('data/my_surveys/' + code + '.txt');
+    publishSurvey(survey);
     response.redirect('/dashboard');
 });
-
-// unpublish survey
 app.get('/unpublishSurvey/:surveyCode', (request, response) => {
-    if(!authenticated(request, response)) {
+    if(!authorized(request)) {
         response.redirect('/');
         return;
     }
     const code = request.params.surveyCode;
-    route_unpublishSurvey(code);
+    let survey = getSurvey('data/published_surveys/' + code + '.txt');
+    unpublishSurvey(survey);
     response.redirect('/dashboard');
 });
-
-// display create survey page
 app.get('/createSurvey', (request, response) => {
-    if(!authenticated(request, response)) {
+    if(!authorized(request)) {
         response.redirect('/');
         return;
     }
-    response.render('create');
+    response.render('createSurvey');
 });
-
-// create survey
-app.post('/createSurvey', (request, response) => {
-    if(!authenticated(request, response)) {
+app.post('/submitCreateSurvey', (request, response) => {
+    if(!authorized(request)) {
         response.redirect('/');
         return;
     }
     const body = request.body;
-    route_createSurveyFromForm(body);
-    response.redirect('dashboard');
-});
-
-// edit survey
-app.get('/editSurvey/:surveyCode', (request, response) => {
-    if(!authenticated(request, response)) {
-        response.redirect('/');
-        return;
-    }
-    const code = request.params.surveyCode;
-});
-
-// delete survey
-app.get('/deleteSurvey/:surveyCode', (request, response) => {
-    if(!authenticated(request, response)) {
-        response.redirect('/');
-        return;
-    }
-    const code = request.params.surveyCode;
-    fs.unlinkSync('data/my_surveys/' + code + '.txt');
-    response.redirect('/dashboard');
-});
-
-// download survey data
-app.get('/downloadSurveyData/:surveyCode', (request, response) => {
-    if(!authenticated(request, response)) {
-        response.redirect('/');
-        return;
-    }
-    const code = request.params.surveyCode;
-    route_downloadSurveyData(code);
-    response.redirect('/dashboard');
-});
-
-// display join page
-app.get('/join', (request, response) => {
-    response.sendFile(__dirname + '/views/join.html');
-});
-
-// submit join
-app.post('/joinSurvey', (request, response) => {
-    const code = request.body.code;
-    const phoneNumber = request.body.phone;
-    const provider = request.body.service_provider;
-    let survey = getPublishedSurvey(code);
-
-    // authenticate the code
-    let validCode = isValidPublishedSurveyCode(code);
-    if(!validCode) {
-        response.redirect('/message/Unable to join survey/Survey code does not exist')
-        return;
-    }
-
-    // authenticate phone number
-    let validPhone = true;
-    survey.phones.forEach(p => {
-        if(phoneNumber == p.number) {
-            validPhone = false;
-        }
-    });
-    if(!validPhone) {
-        response.redirect('/message/Survey already joined/No need to join twice.')
-        return;
-    }
-
-    // add the phone to the survey
-    const phone = new Phone(phoneNumber, provider);
-
-    console.log('-------------------');
-    console.log('before');
-    console.log(survey);
-
-    survey.addPhone(phone);
-    writeSurvey(survey, 'data/published_surveys/' + code + '.txt');
-
-    console.log('---------');
-    console.log('after');
-    console.log(survey);
-
-    response.redirect('/message/Survey Joined/Successfully Joined Survey, Wait for a Text and You can Take a Survey!')
-});
-
-// push survey burst
-app.get('/push/:surveyCode', (request, response) => {
-    if(!authenticated(request, response)) {
-        response.redirect('/');
-        return;
-    }
-    const code = request.params.surveyCode;
-
-    // validate code - needs to published survey
-    let validCode = isValidPublishedSurveyCode(code);
-    if(!validCode) {
-        response.redirect('/message/Unable to push survey/Survey code was not valid')
-        return;
-    }
-
-    route_pushSurveyBurst(code);
-    response.redirect('/message/Successful survey burst push/The next set of questions have been pushed successfully.')
-});
-
-// load take survey page
-app.get('/takeSurvey/:surveyCode/:phoneNumber', (request, response) => {
-    const code = request.params.surveyCode;
-    const phoneNumber = request.params.phoneNumber;
-
-    const validSurvey = isSurveyPublished(code);
-    if(validSurvey) {
-        response.render('survey_views/' + code, {phoneNumber : phoneNumber});
-        return;
-    }
-    response.redirect('/message/Survey not found/The survey requested seems to be... well... not here.');
-});
-
-// submit survey results
-app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
-    const code = request.params.surveyCode;
-    const phoneNumber = request.params.phoneNumber;
-    var data = request.body;
-    route_submitSurveyResponse(code, phoneNumber, data);
-    response.redirect('/message/Survey submitted/Thanks for participating!');
-});
-
-// message page
-app.get('/message/:messageHeader/:message', (request, response) => {
-    const messageHeader = request.params.messageHeader;
-    const message = request.params.message;
-    response.render('message', {data : {messageHeader, message}});
-});
-
-
-// FUNCTIONS
-
-// utilities
-function moveFile(name, from, to) {
-    fs.renameSync(from + '/' + name, to + '/' + name);
-}
-
-// authentication
-function authenticated(request, response) {
-    let loggedIn = activeUser != null;
-    let currentUser = JSON.stringify(activeUser) === JSON.stringify(request.socket.remoteAddress);
-    if(!loggedIn || !currentUser) {
-        return false;
-    }
-    return true;
-}
-function isValidPublishedSurveyCode(code) {
-    let codes = getAllPublishedSurveyCodes();
-    let validCode = false;
-    codes.forEach(c => {
-        if(code == c) {
-            validCode = true;
-        }
-    });
-    return validCode;
-}
-
-// survey management
-function route_createSurveyFromForm(body) {
+    
+    // create survey from form
     let name = '';
     let questions = [];
     for(const key in body) {
         value = body[key];
-
         if(key == 'survey_name') {
             name = value;
         }
@@ -285,12 +109,16 @@ function route_createSurveyFromForm(body) {
             let qIndex = keyParts[0].replace('q', '');
             let qDataType = keyParts[1];
 
-            // if no question, create question
+            // if no question, create null question
             if(qIndex >= questions.length) {
-                let newQuestion = new Question(null, null, null);
-                questions.push(newQuestion);
+                // add null quesions to fill past deleted qIndexes
+                let nullQuestionCount = qIndex - questions.length;
+                for(let i=0; i<=nullQuestionCount; i++) {
+                    let newQuestion = new Question(null, null, null);
+                    questions.push(newQuestion);
+                }
             }
-
+            
             // assign the value to the question
             if(qDataType == 'type') {
                 questions[qIndex].type = value;
@@ -304,163 +132,248 @@ function route_createSurveyFromForm(body) {
         }
     }
 
+    // remove all null questions
+    for (let i=questions.length-1; i>=0; i--) {
+        if (questions[i].type == null || questions[i].text == null) {
+            questions.splice(i, 1);
+        }
+    }
+
     const code = generateUniqueCode();
-    const survey = new Survey(code, name, [], questions, []);
-    writeSurvey(survey, 'data/my_surveys/' + survey.code + '.txt');
+    const survey = new Survey(code, name, [], questions, 0);
+
+    writeSurvey(survey, 'data/my_surveys/' + code + '.txt');
+    response.redirect('dashboard');
+});
+// TODO
+app.get('/editSurvey/:surveyCode', (request, response) => {
+    if(!authorized(request)) {
+        response.redirect('/');
+        return;
+    }
+    const code = request.params.surveyCode;
+});
+app.get('/deleteSurvey/:surveyCode', (request, response) => {
+    if(!authorized(request)) {
+        response.redirect('/');
+        return;
+    }
+    const code = request.params.surveyCode;
+    fs.unlinkSync('data/my_surveys/' + code + '.txt');
+    response.redirect('/dashboard');
+});
+// TODO
+app.get('/downloadSurveyData/:surveyCode', (request, response) => {
+    if(!authorized(request)) {
+        response.redirect('/');
+        return;
+    }
+    const code = request.params.surveyCode;
+    downloadSurveyData(code);
+    response.redirect('/dashboard');
+});
+app.get('/join', (request, response) => {
+    response.sendFile(__dirname + '/views/join.html');
+});
+app.post('/submitJoin', (request, response) => {
+    const code = request.body.code;
+    const phoneNumber = request.body.phone;
+    const provider = request.body.service_provider;
+
+    // authenticate code
+    try {
+        var survey = getPublishedSurvey(code);
+        // check if already joined
+        let validPhone = true;
+        survey.phones.forEach(p => {
+            if(phoneNumber == p.number) {
+                validPhone = false;
+            }
+        });
+        if(!validPhone) {
+            displayMessagePage(response, alreadyJoinedMessage);
+            return;
+        }
+
+        // join survey
+        const phone = new Phone(phoneNumber, provider);
+        survey.subscribe(phone);
+        savePublishedSurvey(survey);
+        displayMessagePage(response, joinedSuccessfullyMessage);
+    }
+    catch(e) {
+        displayMessagePage(response, invalidCodeMessage);
+    }
+});
+// TODO - test success and error
+app.get('/push/:surveyCode', (request, response) => {
+    if(!authorized(request)) {
+        response.redirect('/');
+        return;
+    }
+    const code = request.params.surveyCode;
+
+    try {
+        pushSurvey(code);
+        displayMessagePage(response, pushSuccessfulMessage);
+    }
+    catch(e) {
+        displayMessagePage(response, pushFailedMessage_invalidCode);
+    }
+});
+app.get('/takeSurvey/:surveyCode/:phoneNumber', (request, response) => {
+    const code = request.params.surveyCode;
+    const phoneNumber = request.params.phoneNumber;
+
+    const validSurvey = isSurveyPublished(code);
+    if(validSurvey) {
+        response.render('survey_views/' + code, {phoneNumber : phoneNumber});
+        return;
+    }
+    displayMessagePage(response, surveyNotFoundMessage);
+});
+app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
+    try {
+        const code = request.params.surveyCode;
+        const phoneNumber = request.params.phoneNumber;
+        var data = request.body;
+        submitSurveyResponse(code, phoneNumber, data);
+        displayMessagePage(response, responseSuccessfullMessage);
+    }
+    catch(e) {
+        displayMessagePage(response, responseFailedMessage);
+    }
+});
+app.get('/message/:title/:message', (request, response) => {
+    const title = request.params.title;
+    const message = request.params.message;
+    response.render('message', {data : {title, message}});
+});
+
+// ----- FUNCTIONS -----
+
+function authorized(request) {
+    let loggedIn = activeUser != null;
+    let currentUser = JSON.stringify(activeUser) === JSON.stringify(request.socket.remoteAddress);
+    if(!loggedIn || !currentUser) {
+        return false;
+    }
+    return true;
 }
-function route_publishSurvey(code) {
-    // move survey
-    const fileName = code + '.txt';
-    const fromDir = 'data/my_surveys';
-    const toDir = 'data/published_surveys';
-    moveFile(fileName, fromDir, toDir);
+function displayMessagePage(response, m) {
+    response.redirect('/message/' + m.title + '/'+ m.text);
+}
+
+function getAllSurveysIn(dir) {
+    let surveys = [];
+    const files = fs.readdirSync(dir);
+    files.forEach(file => {
+        const survey = getSurvey(dir + '/' + file);
+        surveys.push(survey);
+    });
+    return surveys;
+}
+function getSurvey(path) {
+    const surveyString = fs.readFileSync(path);
+    const surveyObject = JSON.parse(surveyString);
+    const survey = Survey.createFrom(surveyObject);
+    return survey;
+}
+function getPublishedSurvey(code) {
+    const survey = getSurvey('data/published_surveys/' + code + '.txt');
+    return survey;
+}
+function publishSurvey(survey) {
+    // move file
+    const fromDir = 'data/my_surveys/' + survey.code + '.txt';
+    const toDir = 'data/published_surveys/' + survey.code + '.txt';
+    fs.renameSync(fromDir, toDir);
 
     // generate take survey page
-    fs.writeFileSync('views/survey_views/' + code + '.ejs', ''); 
-    updateTakeSurveyPage(code);
+    fs.writeFileSync('views/survey_views/' + survey.code + '.ejs', ''); 
+    updateTakeSurveyPage(survey.code);
 
-    // generate survey data file from survey
-    const survey = getPublishedSurvey(code);
-    const surveyData = new SurveyData(survey.code, survey.questions, []);
+    // generate survey data file
+    let questionTexts = [];
+    survey.questions.forEach(question => {
+        questionTexts.push(question.text);
+    });
+    const surveyData = new SurveyData(survey.code, questionTexts, {});
     const surveyDataString = JSON.stringify(surveyData);
-    fs.writeFileSync('data/survey_data/' + code + '.txt', surveyDataString);
+    fs.writeFileSync('data/survey_data/' + survey.code + '.txt', surveyDataString); 
 }
-function route_unpublishSurvey(code) {
-    // move file to my surveys directory
-    const fileName = code + '.txt';
-    const fromDir = 'data/published_surveys';
-    const toDir = 'data/my_surveys';
-    moveFile(fileName, fromDir, toDir);
+function unpublishSurvey(survey) {
+    // move file
+    const fromDir = 'data/published_surveys/' + survey.code + '.txt';
+    const toDir = 'data/my_surveys/' + survey.code + '.txt';
+    fs.renameSync(fromDir, toDir);
 
     // delete take survey page
-    fs.unlinkSync('views/survey_views/' + code + '.ejs');
+    fs.unlinkSync('views/survey_views/' + survey.code + '.ejs');
 
     // delete survey data file
-    fs.unlinkSync('data/survey_data/' + code + '.txt');
+    fs.unlinkSync('data/survey_data/' + survey.code + '.txt');
 }
-function route_downloadSurveyData(code) {
-    const surveyData = getSurveyData(code);
-
-    // generate csv file
-    let fileString = 'id';
-
-    surveyData.questions.forEach(question => {
-        fileString += ', ' + question.text;
+function isSurveyPublished(code) {
+    let codes = getAllPublishedSurveyCodes();
+    let validCode = false;
+    codes.forEach(c => {
+        if(code == c) {
+            validCode = true;
+        }
     });
-    fileString += '\n';
-
-    surveyData.data.forEach(d => {
-        fileString += d[0];
-        
-        d[1].forEach(response => {
-            fileString += ', ' + response;
-        });
-
-        fileString += '\n';
-    });
-
-    // create file
-    fs.writeFileSync('' + code + '.txt', fileString);
-
-    // download file
-
-    // delete file
+    return validCode;
 }
-function route_submitSurveyResponse(code, phoneNumber, data) {
-    // read the survey object
-    const survey = getPublishedSurvey(code);
-    let surveyData = getSurveyData(code);
-
-    // add data to survey data
-    let responses = [];
-    for(let i=1; i<=burstQuestionCount; i++) {
-        responses.push(data[i]);
+function writeSurvey(survey, path) {
+    const surveyString = JSON.stringify(survey);
+    fs.writeFileSync(path, surveyString);
+}
+function generateUniqueCode() {
+    let codes = getAllSurveyCodes();
+    let newCode = 0;
+    while(true) {
+        newCode = Math.floor(1000 + Math.random() * 9000);        
+        if(!codes.includes(newCode)) {
+            break;
+        }
     }
-    surveyData.addData(survey.getAskedQuestionsCount(), phoneNumber, responses);
-
-    // store survey data
-    writeSurveyData(surveyData);
+    return newCode;
 }
-function route_pushSurveyBurst(code) {
+function getAllSurveyCodes() {
+    let codes = [];
+    const mySurveys = getAllSurveysIn('data/my_surveys');
+    mySurveys.forEach(survey => {
+        codes.push(survey.code);
+    });
+    const publishedSurveys = getAllSurveysIn('data/published_surveys');
+    publishedSurveys.forEach(survey => {
+        codes.push(survey.code);
+    });
+    return codes;
+}
+function getAllPublishedSurveyCodes() {
+    let codes = [];
+    const publishedSurveys = getAllSurveysIn('data/published_surveys');
+    publishedSurveys.forEach(survey => {
+        codes.push(survey.code);
+    }); 
+    return codes;
+}
+function savePublishedSurvey(survey) {
+    writeSurvey(survey, 'data/published_surveys/' + survey.code + '.txt');
+}
+
+function pushSurvey(code) {
     updateTakeSurveyPage(code);
     sendNotification();
 }
+function updateTakeSurveyPage(code) {
+    let survey = getPublishedSurvey(code);
 
-function writeSurvey(survey, file) {
-    try {
-        const surveyString = JSON.stringify(survey);
-        fs.writeFileSync(file, surveyString);
+    if(survey.isFinished()) {
+        endSurvey(code);
+        return;
     }
-    catch(exception) {
-        console.log(exception);
-    }
-}
-function getSurveyData(code) {
-    try {
-        const surveyDataString = fs.readFileSync('data/survey_data/' + code + '.txt');
-        const surveyDataObject = JSON.parse(surveyDataString);
-        const surveyData = SurveyData.createFrom(surveyDataObject);
-        return surveyData;
-    }
-    catch(exception) {
-        console.log(exception);
-    }
-}
-function writeSurveyData(surveyData) {
-    try {
-        const surveyDataString = JSON.stringify(surveyData);
-        fs.writeFileSync('data/survey_data/' + surveyData.code + '.txt', surveyDataString);
-    }
-    catch(exception) {
-        console.log(exception);
-    }
-}
-function getSurvey(filePath) {
-    try {
-        const surveyString = fs.readFileSync(filePath);
-        const surveyObject = JSON.parse(surveyString);
-        const survey = Survey.createFrom(surveyObject);
-        return survey;
-    }
-    catch(exception) {
-        console.log(exception);
-    }
-}
-function getAllSurveysIn(directory) {
-    let surveys = [];
-    try {
-        const files = fs.readdirSync(directory);
-        files.forEach(file => {
-            const survey = getSurvey(directory + '/' + file);
-            surveys.push(survey);
-        });
-    }
-    catch(exception) {
-        console.log(exception);
-    }
-    return surveys;
-}
-function isSurveyPublished(surveyCode) {
-    let foundSurvey = false;
-    const publishedSurveys = getAllSurveysIn('data/published_surveys');
-    publishedSurveys.forEach(survey => {
-        if(surveyCode == survey.code) {
-            foundSurvey = true;
-        }
-    });
-
-    if(foundSurvey) {
-        return true;
-    }
-    return false;
-}
-function getPublishedSurvey(surveyCode) {
-    const survey = getSurvey('data/published_surveys/' + surveyCode + '.txt');
-    return survey;
-}
-function updateTakeSurveyPage(surveyCode) {
-    // get survey object
-    let survey = getPublishedSurvey(surveyCode);
 
     // generate html code
     let pageCode = `
@@ -477,8 +390,8 @@ function updateTakeSurveyPage(surveyCode) {
             <div class="question">`;
 
             // generate questions
-            for(let i=1; i<=burstQuestionCount; i++) {
-                let question = survey.nextQuestion();
+            for(let i=1; i<=pushQuestionCount; i++) {
+                let question = survey.getNextQuestion();
                 if(question != null) {
                     // TF question
                     if(question.type == 'tf') {
@@ -520,51 +433,82 @@ function updateTakeSurveyPage(surveyCode) {
             </form>
         </body>
         </html>`;
-    
-    // write to survey page
-    fs.writeFileSync('views/survey_views/' + surveyCode + '.ejs', pageCode);
+
+    savePublishedSurvey(survey);
+    fs.writeFileSync('views/survey_views/' + code + '.ejs', pageCode);
 }
-function generateUniqueCode() {
-    let codes = getAllSurveyCodes();
-    let newCode = 0;
-    while(true) {
-        newCode = Math.floor(1000 + Math.random() * 9000);        
-        if(!codes.includes(newCode)) {
-            break;
-        }
+function endSurvey(code) {
+    // mark survey as complete
+}
+// TODO
+function sendNotification() {}
+
+function submitSurveyResponse(code, phoneNumber, data) {
+    const survey = getPublishedSurvey(code);
+    let surveyData = getSurveyData(code);
+
+    // get responses
+    let responses = [];
+    for(let i=1; i<=pushQuestionCount; i++) {
+        responses.push(data[i]);
     }
-    return newCode;
-}
-function getAllSurveyCodes() {
-    let codes = [];
-    const mySurveys = getAllSurveysIn('data/my_surveys');
-    mySurveys.forEach(survey => {
-        codes.push(survey.code);
-    });
-    const publishedSurveys = getAllSurveysIn('data/published_surveys');
-    publishedSurveys.forEach(survey => {
-        codes.push(survey.code);
-    });
-    return codes;
-}
-function getAllPublishedSurveyCodes() {
-    let codes = [];
-    const publishedSurveys = getAllSurveysIn('data/published_surveys');
-    publishedSurveys.forEach(survey => {
-        codes.push(survey.code);
+
+    // add data
+    let i = 0;
+    responses.forEach(response => {
+        let questionIndex = survey.questionNumber+i;
+        surveyData.add(phoneNumber, response, questionIndex);
+        i++;
     }); 
-    return codes;
+
+    // store survey data
+    writeSurveyData(surveyData);
+}
+function getSurveyData(code) {
+    const surveyDataString = fs.readFileSync('data/survey_data/' + code + '.txt');
+    const surveyDataObject = JSON.parse(surveyDataString);
+    const surveyData = SurveyData.createFrom(surveyDataObject);
+    return surveyData;
+}
+function writeSurveyData(surveyData) {
+    const surveyDataString = JSON.stringify(surveyData);
+    fs.writeFileSync('data/survey_data/' + surveyData.code + '.txt', surveyDataString);
+}
+// TODO
+function downloadSurveyData(code) {
+    const surveyData = getSurveyData(code);
+
+    // generate csv file
+    let fileString = 'id';
+
+    surveyData.questions.forEach(question => {
+        fileString += ', ' + question.text;
+    });
+    fileString += '\n';
+
+    surveyData.data.forEach(d => {
+        fileString += d[0];
+        
+        d[1].forEach(response => {
+            fileString += ', ' + response;
+        });
+
+        fileString += '\n';
+    });
+
+    // create file
+    fs.writeFileSync('' + code + '.txt', fileString);
+
+    // download file
+
+    // delete file
 }
 
-// email
-function sendNotification() {
+// TODO
+function unsubscribe() {}
 
-}
-function unsubscribe() {
+// ----- CLASSES -----
 
-}
-
-// MODELS
 class Question {
     constructor(type, text, responses) {
         this.type = type;
@@ -579,89 +523,104 @@ class Phone {
     }
 }
 class Survey {
-    constructor(code, name, phones, questions, askedQuestions) {
+    constructor(code, name, phones, questions, questionNumber) {
         this.code = code;
         this.name = name;
         this.phones = phones;
         this.questions = questions;
-        this.askedQuestions = askedQuestions;
+        this.questionNumber = questionNumber;
     }
     static createFrom(survey) {
-        return new Survey(survey.code, survey.name, survey.phones, survey.questions, survey.askedQuestions);
+        return new Survey(survey.code, survey.name, survey.phones, survey.questions, survey.questionNumber);
     }
-    addPhone(phone) {
+    subscribe(phone) {
         this.phones.push(phone);
     }
-    nextQuestion() {
-        const hasNextQuestion = this.questions.length > 0;
-        if(hasNextQuestion) {
-            let nextQuestion = this.questions[0];
-            this.questions.shift();
-            this.askedQuestions.push(nextQuestion);
-            return nextQuestion;
+    unsubscribe(phone) {
+        
+    }
+    getNextQuestion() {
+        const haveNextQuestion = this.questionNumber <= this.questions.length;
+        
+        if(haveNextQuestion) {
+            return this.questions[this.questionNumber++];
         }
+        savePublishedSurvey(this);
         return null;
     }
-    getAskedQuestionsCount() {
-        return this.askedQuestions.length;
+    isFinished() {
+        if(this.questionNumber > this.questions.length) {
+            return true;
+        }
+        return false;
     }
 }
 class SurveyData {
-    constructor(code, questions, data) {
+    constructor(code, questions, responseDictionary) {
         this.code = code;
         this.questions = questions;
-        this.data = data;
+        this.responseDictionary = responseDictionary;
     }
     static createFrom(surveyData) {
-        return new SurveyData(surveyData.code, surveyData.questions, surveyData.data);
+        return new SurveyData(surveyData.code, surveyData.questions, surveyData.responseDictionary);
     }
-    addData(askedQuestionsCount, phoneNumber, responses) {
-        // add new entry
-        if(!this.hasPhoneNumber(phoneNumber)) {
-            this.data.push([phoneNumber, []]);
+    add(phoneNumber, response, questionNumber) {
+        // add new phone number
+        const newPhoneNumber = !this.isPhoneNumberInData(phoneNumber);
+        if(newPhoneNumber) {
+            this.addPhoneNumber(phoneNumber);
         }
 
-        // if missing entries add them
-        this.fillMissingEntries(phoneNumber, askedQuestionsCount);
+        // fill missing responses
+        this.fillMissingResponses(phoneNumber, questionNumber);
+        
+        // add response
+        let responses = this.responseDictionary[phoneNumber];
+        const responseNumber = responses.length;
+        const hasNotRespondedYet = responseNumber <= questionNumber;
 
-        // add new data
-        this.addNewData(phoneNumber, responses, askedQuestionsCount);
-    }
-    hasPhoneNumber(phoneNumber) {
+        if(hasNotRespondedYet) {
+            responses.push(response);
+        }
+    }  
+    isPhoneNumberInData(phoneNumber) {
         let hasPhoneNumber = false;
-        this.data.forEach(entry => {
-            if(phoneNumber == entry[0]) {
-                hasPhoneNumber = true;
-            }
-        });
+        if(phoneNumber in this.responseDictionary) {
+            hasPhoneNumber = true;
+        }
         return hasPhoneNumber;
     }
-    fillMissingEntries(phoneNumber, askedQuestionsCount) {
-        this.data.forEach(entry => {
-            if(phoneNumber == entry[0]) {
-                if(entry[1].length <= askedQuestionsCount) {
-                    for(let i=0; i<askedQuestionsCount-entry[1].length; i++) {
-                        entry[1].push(null);
-                    }
-                }
-            }
-        });
+    addPhoneNumber(phoneNumber) {
+        this.responseDictionary[phoneNumber] = [];
     }
-    addNewData(phoneNumber, responses, askedQuestionsCount) {
-        this.data.forEach(entry => {
-            const onSameQuestion = entry[1].length + responses.length == askedQuestionsCount;
-
-            console.log(entry[1].length);
-            console.log(responses.length);
-            console.log(askedQuestionsCount);
-
-            if(phoneNumber == entry[0] && onSameQuestion) {
-                entry[1].push(responses);
-            }
-        });
+    fillMissingResponses(phoneNumber, questionIndex) {
+        // calculate how many questions missing
+        const responseIndex = this.responseDictionary[phoneNumber].length;
+        const missingQuestionsCount = questionIndex - responseIndex;
+        for(let i=0; i<missingQuestionsCount; i++) {
+            this.responseDictionary[phoneNumber].push(null);
+        }
+    }
+}
+class Message {
+    constructor(title, text) {
+        this.title = title;
+        this.text = text;
     }
 }
 
+// ----- MESSAGES -----
+
+var invalidCodeMessage = new Message('Invalid code', 'Please try again.');
+var alreadyJoinedMessage = new Message('Join failed', 'Looks like you already joined. No need to join twice.');
+var joinedSuccessfullyMessage = new Message('Joined survey successfully', 'Hang out until you get notified to take the survey.');
+var pushFailedMessage_invalidCode = new Message('Push failed', 'Looks like the code was invalid.');
+var pushSuccessfulMessage = new Message('Push successful', 'Survey page updated... notifications sent... and now we wait.');
+var responseSuccessfullMessage = new Message('Response recorded', 'Thank you for your response!');
+var responseFailedMessage = new Message('Response failed', 'Please try again later.');
+var surveyNotFoundMessage = new Message('Survey not found', 'Please try again later.');
+
+// run server
 const server = http.createServer(app);
 server.listen(3000);
 console.log('running server');
