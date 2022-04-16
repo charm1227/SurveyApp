@@ -8,9 +8,10 @@ const fs = require('fs');
 const bcrypt = require('bcrypt');
 const { debug } = require('console');
 const { closeDelimiter } = require('ejs');
-require('dotenv').config();
-const { sendMail } = require('./send');
-const { readMail } = require('./read');
+
+// require('dotenv').config();
+// const { sendMail } = require('./send');
+// const { readMail } = require('./read');
 
 let activeUser = null;
 
@@ -481,7 +482,6 @@ function writeSurveyData(surveyData) {
 function downloadSurveyData(code) {
     const surveyData = getSurveyData(code);
 
-<<<<<<< HEAD
     // generate csv file
     let fileString = 'id';
 
@@ -506,14 +506,6 @@ function downloadSurveyData(code) {
     // download file
 
     // delete file
-=======
-// email
-function sendNotification() {
-    sendMail();
-}
-function unsubscribe() {
-    setInterval(readMail(), 30000);
->>>>>>> 9a5e24ff6a9a53caba64c3673a69b70d7093948a
 }
 
 // TODO
