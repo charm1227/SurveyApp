@@ -8,10 +8,12 @@ const fs = require('fs');
 const bcrypt = require('bcrypt');
 const { debug } = require('console');
 const { closeDelimiter } = require('ejs');
-
-// require('dotenv').config();
-// const { sendMail } = require('./send');
-// const { readMail } = require('./read');
+const nodemailer = require('nodemailer');
+const { SEND_MAIL_CONFIG } = require('./config');
+const transporter = nodemailer.createTransport(SEND_MAIL_CONFIG);
+const imaps = require('imap-simple');
+const { convert } = require('html-to-text');
+const { READ_MAIL_CONFIG } = require('./config');
 
 let activeUser = null;
 
@@ -445,7 +447,32 @@ function endSurvey(code) {
     // mark survey as complete
 }
 // TODO
-function sendNotification() {}
+function sendNotification() {
+    try {
+        const time = new Date().toDateString();
+        let info =  transporter.sendMail({
+          from: SEND_MAIL_CONFIG.auth.user,
+          to: SEND_MAIL_CONFIG.auth.user,
+          subject: 'Hello ✔',
+          html: `
+          <div
+            class="container"
+            style="max-width: 90%; margin: auto; padding-top: 20px"
+          >
+            <h2>This is a testing email</h2>
+            <p>Please ignore this mail</p>
+            <p>sent at ${time}</p>
+          </div>
+        `,
+        });
+        console.log(`MAIL INFO: ${info}`);
+        console.log(`MAIL SENT AT: ${time}`);
+      } catch (error) {
+        console.log(error);
+        return false;
+      }
+      //Need to send to different emails from provider and phone number
+}
 
 function submitSurveyResponse(code, phoneNumber, data) {
     const survey = getPublishedSurvey(code);
@@ -509,7 +536,34 @@ function downloadSurveyData(code) {
 }
 
 // TODO
-function unsubscribe() {}
+function unsubscribe() {
+    const readMail = async () => {
+        try {
+          const connection =  imaps.connect(READ_MAIL_CONFIG);
+          console.log('CONNECTION SUCCESSFUL', new Date().toString());
+          const box =  connection.openBox('INBOX');
+          const searchCriteria = ['UNSEEN'];
+          const fetchOptions = {
+            bodies: ['HEADER', 'TEXT'],
+            markSeen: false,
+          };
+          const results =  connection.search(searchCriteria, fetchOptions);
+          results.forEach((res) => {
+            const text = res.parts.filter((part) => {
+              return part.which === 'TEXT';
+            });
+            //Need to take Text and remove phone number if text == STOP
+            let emailHTML = text[0].body;
+            let emailText = convert(emailHTML);
+            console.log(emailText);
+          });
+          connection.end();
+        } catch (error) {
+          console.log(error);
+        }
+      };
+      
+}
 
 // ----- CLASSES -----
 
@@ -625,6 +679,11 @@ var responseFailedMessage = new Message('Response failed', 'Please try again lat
 var surveyNotFoundMessage = new Message('Survey not found', 'Please try again later.');
 
 // run server
+//Checks every 15 mins for new emails
+setInterval(() => {
+    unsubscribe();
+}, 15 * 60 * 1000);
+
 const server = http.createServer(app);
 server.listen(3000);
 console.log('running server');
