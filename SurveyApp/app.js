@@ -11,9 +11,6 @@ const { closeDelimiter } = require('ejs');
 const nodemailer = require('nodemailer');
 const { SEND_MAIL_CONFIG } = require('./config');
 const transporter = nodemailer.createTransport(SEND_MAIL_CONFIG);
-const imaps = require('imap-simple');
-const { convert } = require('html-to-text');
-const { READ_MAIL_CONFIG } = require('./config');
 
 let activeUser = null;
 
@@ -555,35 +552,7 @@ function sendNotification() {
       }
       //Need to send to different emails from provider and phone number
 }
-// TODO
-function unsubscribe() {
-    const readMail = async () => {
-        try {
-          const connection =  imaps.connect(READ_MAIL_CONFIG);
-          console.log('CONNECTION SUCCESSFUL', new Date().toString());
-          const box =  connection.openBox('INBOX');
-          const searchCriteria = ['UNSEEN'];
-          const fetchOptions = {
-            bodies: ['HEADER', 'TEXT'],
-            markSeen: false,
-          };
-          const results =  connection.search(searchCriteria, fetchOptions);
-          results.forEach((res) => {
-            const text = res.parts.filter((part) => {
-              return part.which === 'TEXT';
-            });
-            //Need to take Text and remove phone number if text == STOP
-            let emailHTML = text[0].body;
-            let emailText = convert(emailHTML);
-            console.log(emailText);
-          });
-          connection.end();
-        } catch (error) {
-          console.log(error);
-        }
-      };
-      
-}
+
 
 // ----- CLASSES -----
 
@@ -695,12 +664,9 @@ var responseSuccessfullMessage = new Message('Response recorded', 'Thank you for
 var responseFailedMessage = new Message('Response failed', 'Please try again later.');
 var surveyNotFoundMessage = new Message('Survey not found', 'Please try again later.');
 
-//Checks every 15 mins for new emails
-setInterval(() => {
-    unsubscribe();
-}, 15 * 60 * 1000);
 
 // run server
 const server = http.createServer(app);
 server.listen(3000);
 console.log('running server');
+
