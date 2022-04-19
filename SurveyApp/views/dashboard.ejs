@@ -46,7 +46,7 @@
                     <div class="surveyControls"> 
                         <% if(survey.isFinished) { %>
                             <progress id="progress_bar" value=<%= survey.getProgressPercent() %> max="100"></progress>
-                            <label>Done</label>
+                            <img class="buttonIcon" type="image" src="icons/check_bold.png" alt="done">
                         <% } else { %>
                             <progress id="progress_bar" value=<%= survey.getProgressPercent()-10 %> max="100"></progress>
                         <% } %>
