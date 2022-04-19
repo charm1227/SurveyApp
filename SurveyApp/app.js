@@ -152,14 +152,15 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
     }
     const code = request.params.surveyCode;
     let survey = getSurvey('data/my_surveys/' + code + '.txt');
-
-    // start survey from beginning
-    survey.restartSurvey();
     
     // move file
     const fromDir = 'data/my_surveys/' + survey.code + '.txt';
     const toDir = 'data/published_surveys/' + survey.code + '.txt';
     fs.renameSync(fromDir, toDir);
+
+    // reset survey
+    survey.reset();
+    savePublishedSurvey(survey);
 
     // generate take survey page
     fs.writeFileSync('views/survey_views/' + survey.code + '.ejs', ''); 
@@ -183,6 +184,10 @@ app.get('/unpublishSurvey/:surveyCode', (request, response) => {
     }
     const code = request.params.surveyCode;
     let survey = getSurvey('data/published_surveys/' + code + '.txt');
+
+    // reset survey
+    survey.reset();
+    savePublishedSurvey(survey);
 
     // move file
     const fromDir = 'data/published_surveys/' + survey.code + '.txt';
@@ -293,7 +298,6 @@ app.get('/push/:surveyCode', (request, response) => {
         displayMessagePage(response, pushSurveyCompleteMessage);
     }
 });
-// TESTING
 app.get('/takeSurvey/:surveyCode/:phoneNumber', (request, response) => {
     const code = request.params.surveyCode;
     const phoneNumber = request.params.phoneNumber;
@@ -305,7 +309,6 @@ app.get('/takeSurvey/:surveyCode/:phoneNumber', (request, response) => {
     }
     displayMessagePage(response, surveyNotFoundMessage);
 });
-// TESTING
 app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
     const code = request.params.surveyCode;
     const phoneNumber = request.params.phoneNumber;
@@ -324,10 +327,7 @@ app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
 
     // add data
     for(let i=0; i<newResponses.length; i++) {
-        let rAddIndex = survey.rIndex + i;
-
-        console.log('rAddIndex', rAddIndex, 'rIndex', survey.rIndex, 'i', i);
-        
+        let rAddIndex = survey.rIndex + i;        
         surveyData.add(phoneNumber, newResponses[i], rAddIndex);
     }
 
@@ -355,7 +355,6 @@ function authorized(request) {
 function displayMessagePage(response, m) {
     response.redirect('/message/' + m.title + '/'+ m.text);
 }
-
 function getAllSurveysIn(dir) {
     let surveys = [];
     const files = fs.readdirSync(dir);
@@ -553,7 +552,6 @@ function sendNotification(phone) {
       //Need to send to different emails from provider and phone number
 }
 
-
 function sendText(phone, message) {
 
 }
@@ -603,8 +601,10 @@ class Survey {
     outOfQuestions() {
         return this.qIndex >= this.questions.length;
     }
-    restartSurvey() {
+    reset() {
+        this.phones = [];
         this.qIndex = 0;
+        this.rIndex = 0;
     }
 }
 class SurveyData {
@@ -670,7 +670,6 @@ var pushSuccessfulMessage = new Message('Push successful', 'Survey page updated.
 var responseSuccessfullMessage = new Message('Response recorded', 'Thank you for your response!');
 var responseFailedMessage = new Message('Response failed', 'Please try again later.');
 var surveyNotFoundMessage = new Message('Survey not found', 'Please try again later.');
-
 
 // run server
 const server = http.createServer(app);
