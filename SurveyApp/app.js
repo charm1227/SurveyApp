@@ -200,7 +200,6 @@ app.get('/unpublishSurvey/:surveyCode', (request, response) => {
 
     response.redirect('/dashboard');
 });
-// TODO
 app.get('/downloadSurveyData/:surveyCode', (request, response) => {
     if(!authorized(request)) {
         response.redirect('/');
@@ -208,11 +207,7 @@ app.get('/downloadSurveyData/:surveyCode', (request, response) => {
     }
     const code = request.params.surveyCode;
     const surveyData = getSurveyData(code);
-
-    // generate csv file
     let fileString = 'id';
-
-    console.log(surveyData);
 
     // write questions
     surveyData.questions.forEach(question => {
@@ -231,14 +226,21 @@ app.get('/downloadSurveyData/:surveyCode', (request, response) => {
         }
     }
 
-    // create temp file
-    fs.writeFileSync('' + code + '.txt', fileString);
+    // write csv file
+    fs.writeFileSync(code + '.csv', fileString);
 
-    // download file
-
-    // delete temp file
-
-    response.redirect('/dashboard');
+    // download csv file
+    response.redirect('/download/' + code + '.csv');
+});
+app.get('/download/:file', (request, response) => {
+    if(!authorized(request)) {
+        response.redirect('/');
+        return;
+    }
+    const file = request.params.file;
+    response.download(file, () => {
+        fs.unlinkSync(file); // remove temp file after download
+    });
 });
 app.get('/join', (request, response) => {
     response.sendFile(__dirname + '/views/join.html');
@@ -323,8 +325,6 @@ app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
         }
     }
 
-    console.log('responses', newResponses);
-
     // add data
     for(let i=0; i<newResponses.length; i++) {
         let rAddIndex = survey.rIndex + i;
@@ -333,8 +333,6 @@ app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
         
         surveyData.add(phoneNumber, newResponses[i], rAddIndex);
     }
-
-    console.log(surveyData);
 
     // store survey data
     writeSurveyData(surveyData);
@@ -519,7 +517,7 @@ function getSurveyData(code) {
 function writeSurveyData(surveyData) {
     const surveyDataString = JSON.stringify(surveyData);
     fs.writeFileSync('data/survey_data/' + surveyData.code + '.txt', surveyDataString);
-}
+} 
 
 // TODO
 function endSurvey(code) {
