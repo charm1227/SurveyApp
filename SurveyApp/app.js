@@ -126,7 +126,7 @@ app.post('/submitCreateSurvey', (request, response) => {
     }
 
     const code = generateUniqueCode();
-    const survey = new Survey(code, name, [], questions, 0);
+    const survey = new Survey(code, name, [], questions, 0, 0);
 
     writeSurvey(survey, 'data/my_surveys/' + code + '.txt');
     response.redirect('dashboard');
@@ -212,23 +212,23 @@ app.get('/downloadSurveyData/:surveyCode', (request, response) => {
     // generate csv file
     let fileString = 'id';
 
+    console.log(surveyData);
+
     // write questions
     surveyData.questions.forEach(question => {
         fileString += ', ' + question;
     });
     fileString += '\n';
 
-    // write data
-    if(surveyData.data != null) {
-        surveyData.data.forEach(d => {
-            fileString += d[0];
-            
-            d[1].forEach(response => {
-                fileString += ', ' + response;
+    // write responses
+    if(surveyData.responseDictionary != null) {
+        for(const [key, value] of Object.entries(surveyData.responseDictionary)) {
+            fileString += key;
+            value.forEach(response => {
+                fileString += ', ' + response
             });
-
             fileString += '\n';
-        });
+        }
     }
 
     // create temp file
@@ -282,13 +282,16 @@ app.get('/push/:surveyCode', (request, response) => {
     const code = request.params.surveyCode;
     let survey = getPublishedSurvey(code);
 
-    if(!survey.isFinished()) {
+    if(!survey.outOfQuestions()) {
+        survey.rIndex += pushQuestionCount;
+        savePublishedSurvey(survey);
         updateTakeSurveyPage(survey);
         //sendNotification();
         displayMessagePage(response, pushSuccessfulMessage);
     }
     else {
-        displayMessagePage(response, pushFailedMessage);
+        updateTakeSurveyPage(survey);
+        displayMessagePage(response, pushSurveyCompleteMessage);
     }
 });
 // TESTING
@@ -305,40 +308,38 @@ app.get('/takeSurvey/:surveyCode/:phoneNumber', (request, response) => {
 });
 // TESTING
 app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
-    try {
-        const code = request.params.surveyCode;
-        const phoneNumber = request.params.phoneNumber;
-        var data = request.body;
-        
-        const survey = getPublishedSurvey(code);
-        let surveyData = getSurveyData(code);
+    const code = request.params.surveyCode;
+    const phoneNumber = request.params.phoneNumber;
+    var data = request.body;
     
-        // get responses
-        let responses = [];
-        for(let i=1; i<=pushQuestionCount; i++) {
-            if(data[i] != undefined) {
-                responses.push(data[i]);
-            }
+    const survey = getPublishedSurvey(code);
+    let surveyData = getSurveyData(code);
+
+    // get responses
+    let newResponses = [];
+    for(let i=1; i<=pushQuestionCount; i++) {
+        if(data[i] != undefined) {
+            newResponses.push(data[i]);
         }
-    
-        // add data
-        let i = 0;
-        responses.forEach(response => {
-            let questionNumber = survey.questionNumber + i - pushQuestionCount;
-            surveyData.add(phoneNumber, response, questionNumber);
-            i++;
-        }); 
-
-        console.log(surveyData);
-    
-        // store survey data
-        writeSurveyData(surveyData);
-
-        displayMessagePage(response, responseSuccessfullMessage);
     }
-    catch(e) {
-        displayMessagePage(response, responseFailedMessage);
+
+    console.log('responses', newResponses);
+
+    // add data
+    for(let i=0; i<newResponses.length; i++) {
+        let rAddIndex = survey.rIndex + i;
+
+        console.log('rAddIndex', rAddIndex, 'rIndex', survey.rIndex, 'i', i);
+        
+        surveyData.add(phoneNumber, newResponses[i], rAddIndex);
     }
+
+    console.log(surveyData);
+
+    // store survey data
+    writeSurveyData(surveyData);
+
+    displayMessagePage(response, responseSuccessfullMessage);
 });
 app.get('/message/:title/:message', (request, response) => {
     const title = request.params.title;
@@ -429,7 +430,7 @@ function savePublishedSurvey(survey) {
 }
 function updateTakeSurveyPage(survey) {
     let pageCode = '';
-    if(survey.isFinished()) {
+    if(survey.outOfQuestions()) {
         endSurvey(survey.code);
         pageCode = `
             <!DOCTYPE html>
@@ -495,6 +496,7 @@ function updateTakeSurveyPage(survey) {
                             pageCode += `</div>`;
                         }
                     }
+                
                 }
 
         pageCode += `
@@ -508,6 +510,17 @@ function updateTakeSurveyPage(survey) {
     savePublishedSurvey(survey);
     fs.writeFileSync('views/survey_views/' + survey.code + '.ejs', pageCode);
 }
+function getSurveyData(code) {
+    const surveyDataString = fs.readFileSync('data/survey_data/' + code + '.txt');
+    const surveyDataObject = JSON.parse(surveyDataString);
+    const surveyData = SurveyData.createFrom(surveyDataObject);
+    return surveyData;
+}
+function writeSurveyData(surveyData) {
+    const surveyDataString = JSON.stringify(surveyData);
+    fs.writeFileSync('data/survey_data/' + surveyData.code + '.txt', surveyDataString);
+}
+
 // TODO
 function endSurvey(code) {
     // mark survey as complete
@@ -544,18 +557,6 @@ function sendNotification() {
       }
       //Need to send to different emails from provider and phone number
 }
-
-function getSurveyData(code) {
-    const surveyDataString = fs.readFileSync('data/survey_data/' + code + '.txt');
-    const surveyDataObject = JSON.parse(surveyDataString);
-    const surveyData = SurveyData.createFrom(surveyDataObject);
-    return surveyData;
-}
-function writeSurveyData(surveyData) {
-    const surveyDataString = JSON.stringify(surveyData);
-    fs.writeFileSync('data/survey_data/' + surveyData.code + '.txt', surveyDataString);
-}
-
 // TODO
 function unsubscribe() {
     const readMail = async () => {
@@ -602,15 +603,16 @@ class Phone {
     }
 }
 class Survey {
-    constructor(code, name, phones, questions, questionNumber) {
+    constructor(code, name, phones, questions, qIndex, rIndex) {
         this.code = code;
         this.name = name;
         this.phones = phones;
         this.questions = questions;
-        this.questionNumber = questionNumber;
+        this.qIndex = qIndex;
+        this.rIndex = rIndex;
     }
     static createFrom(survey) {
-        return new Survey(survey.code, survey.name, survey.phones, survey.questions, survey.questionNumber);
+        return new Survey(survey.code, survey.name, survey.phones, survey.questions, survey.qIndex, survey.rIndex);
     }
     subscribe(phone) {
         this.phones.push(phone);
@@ -619,21 +621,16 @@ class Survey {
         
     }
     getNextQuestion() {
-        const hasNextQuestion = this.questionNumber <= this.questions.length;
-        if(hasNextQuestion) {
-            return this.questions[this.questionNumber++];
+        if(this.qIndex < this.questions.length) {
+            return this.questions[this.qIndex++];
         }
-        savePublishedSurvey(this);
         return null;
     }
-    isFinished() {
-        if(this.questionNumber > this.questions.length) {
-            return true;
-        }
-        return false;
+    outOfQuestions() {
+        return this.qIndex >= this.questions.length;
     }
     restartSurvey() {
-        this.questionNumber = 0;
+        this.qIndex = 0;
     }
 }
 class SurveyData {
@@ -677,9 +674,6 @@ class SurveyData {
         // calculate how many questions missing
         const responseNumber = this.responseDictionary[phoneNumber].length;
         const missingQuestionsCount = questionNumber - responseNumber;
-
-        console.log('questionNumber = ' + questionNumber + ' responseNumber = ' + responseNumber);
-
         for(let i=0; i<missingQuestionsCount; i++) {
             this.responseDictionary[phoneNumber].push(null);
         }
@@ -697,7 +691,7 @@ class Message {
 var invalidCodeMessage = new Message('Invalid code', 'Please try again.');
 var alreadyJoinedMessage = new Message('Join failed', 'Looks like you already joined. No need to join twice.');
 var joinedSuccessfullyMessage = new Message('Joined survey successfully', 'Hang out until you get notified to take the survey.');
-var pushFailedMessage = new Message('Push failed', 'Survey has ended.');
+var pushSurveyCompleteMessage = new Message('Survey completed', 'No more questions to ask.');
 var pushSuccessfulMessage = new Message('Push successful', 'Survey page updated... notifications sent... and now we wait.');
 var responseSuccessfullMessage = new Message('Response recorded', 'Thank you for your response!');
 var responseFailedMessage = new Message('Response failed', 'Please try again later.');
