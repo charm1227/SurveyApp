@@ -526,7 +526,7 @@ function endSurvey(code) {
 
 }
 // TODO
-function sendNotification() {
+function sendNotification(phone) {
     try {
         const time = new Date().toDateString();
         let info =  transporter.sendMail({
@@ -553,6 +553,13 @@ function sendNotification() {
       //Need to send to different emails from provider and phone number
 }
 
+
+function sendText(phone, message) {
+
+}
+function sendEmail(address, message) {
+
+}
 
 // ----- CLASSES -----
 
