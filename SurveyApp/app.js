@@ -67,26 +67,6 @@ app.get('/dashboard', (request, response) => {
     let publishedSurveys = getAllSurveysIn('data/published_surveys');
     response.render('dashboard', {data : {mySurveys, publishedSurveys}});
 });
-app.get('/publishSurvey/:surveyCode', (request, response) => {
-    if(!authorized(request)) {
-        response.redirect('/');
-        return;
-    }
-    const code = request.params.surveyCode;
-    let survey = getSurvey('data/my_surveys/' + code + '.txt');
-    publishSurvey(survey);
-    response.redirect('/dashboard');
-});
-app.get('/unpublishSurvey/:surveyCode', (request, response) => {
-    if(!authorized(request)) {
-        response.redirect('/');
-        return;
-    }
-    const code = request.params.surveyCode;
-    let survey = getSurvey('data/published_surveys/' + code + '.txt');
-    unpublishSurvey(survey);
-    response.redirect('/dashboard');
-});
 app.get('/createSurvey', (request, response) => {
     if(!authorized(request)) {
         response.redirect('/');
@@ -168,6 +148,58 @@ app.get('/deleteSurvey/:surveyCode', (request, response) => {
     fs.unlinkSync('data/my_surveys/' + code + '.txt');
     response.redirect('/dashboard');
 });
+app.get('/publishSurvey/:surveyCode', (request, response) => {
+    if(!authorized(request)) {
+        response.redirect('/');
+        return;
+    }
+    const code = request.params.surveyCode;
+    let survey = getSurvey('data/my_surveys/' + code + '.txt');
+
+    // start survey from beginning
+    survey.restartSurvey();
+    
+    // move file
+    const fromDir = 'data/my_surveys/' + survey.code + '.txt';
+    const toDir = 'data/published_surveys/' + survey.code + '.txt';
+    fs.renameSync(fromDir, toDir);
+
+    // generate take survey page
+    fs.writeFileSync('views/survey_views/' + survey.code + '.ejs', ''); 
+    updateTakeSurveyPage(survey);
+
+    // generate survey data file
+    let questionTexts = [];
+    survey.questions.forEach(question => {
+        questionTexts.push(question.text);
+    });
+    const surveyData = new SurveyData(survey.code, questionTexts, {});
+    const surveyDataString = JSON.stringify(surveyData);
+    fs.writeFileSync('data/survey_data/' + survey.code + '.txt', surveyDataString); 
+
+    response.redirect('/dashboard');
+});
+app.get('/unpublishSurvey/:surveyCode', (request, response) => {
+    if(!authorized(request)) {
+        response.redirect('/');
+        return;
+    }
+    const code = request.params.surveyCode;
+    let survey = getSurvey('data/published_surveys/' + code + '.txt');
+
+    // move file
+    const fromDir = 'data/published_surveys/' + survey.code + '.txt';
+    const toDir = 'data/my_surveys/' + survey.code + '.txt';
+    fs.renameSync(fromDir, toDir);
+
+    // delete take survey page
+    fs.unlinkSync('views/survey_views/' + survey.code + '.ejs');
+
+    // delete survey data file
+    fs.unlinkSync('data/survey_data/' + survey.code + '.txt');
+
+    response.redirect('/dashboard');
+});
 // TODO
 app.get('/downloadSurveyData/:surveyCode', (request, response) => {
     if(!authorized(request)) {
@@ -175,7 +207,37 @@ app.get('/downloadSurveyData/:surveyCode', (request, response) => {
         return;
     }
     const code = request.params.surveyCode;
-    downloadSurveyData(code);
+    const surveyData = getSurveyData(code);
+
+    // generate csv file
+    let fileString = 'id';
+
+    // write questions
+    surveyData.questions.forEach(question => {
+        fileString += ', ' + question;
+    });
+    fileString += '\n';
+
+    // write data
+    if(surveyData.data != null) {
+        surveyData.data.forEach(d => {
+            fileString += d[0];
+            
+            d[1].forEach(response => {
+                fileString += ', ' + response;
+            });
+
+            fileString += '\n';
+        });
+    }
+
+    // create temp file
+    fs.writeFileSync('' + code + '.txt', fileString);
+
+    // download file
+
+    // delete temp file
+
     response.redirect('/dashboard');
 });
 app.get('/join', (request, response) => {
@@ -211,22 +273,25 @@ app.post('/submitJoin', (request, response) => {
         displayMessagePage(response, invalidCodeMessage);
     }
 });
-// TODO - test success and error
+// TODO - send notifications
 app.get('/push/:surveyCode', (request, response) => {
     if(!authorized(request)) {
         response.redirect('/');
         return;
     }
     const code = request.params.surveyCode;
+    let survey = getPublishedSurvey(code);
 
-    try {
-        pushSurvey(code);
+    if(!survey.isFinished()) {
+        updateTakeSurveyPage(survey);
+        //sendNotification();
         displayMessagePage(response, pushSuccessfulMessage);
     }
-    catch(e) {
-        displayMessagePage(response, pushFailedMessage_invalidCode);
+    else {
+        displayMessagePage(response, pushFailedMessage);
     }
 });
+// TESTING
 app.get('/takeSurvey/:surveyCode/:phoneNumber', (request, response) => {
     const code = request.params.surveyCode;
     const phoneNumber = request.params.phoneNumber;
@@ -238,12 +303,37 @@ app.get('/takeSurvey/:surveyCode/:phoneNumber', (request, response) => {
     }
     displayMessagePage(response, surveyNotFoundMessage);
 });
+// TESTING
 app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
     try {
         const code = request.params.surveyCode;
         const phoneNumber = request.params.phoneNumber;
         var data = request.body;
-        submitSurveyResponse(code, phoneNumber, data);
+        
+        const survey = getPublishedSurvey(code);
+        let surveyData = getSurveyData(code);
+    
+        // get responses
+        let responses = [];
+        for(let i=1; i<=pushQuestionCount; i++) {
+            if(data[i] != undefined) {
+                responses.push(data[i]);
+            }
+        }
+    
+        // add data
+        let i = 0;
+        responses.forEach(response => {
+            let questionNumber = survey.questionNumber + i - pushQuestionCount;
+            surveyData.add(phoneNumber, response, questionNumber);
+            i++;
+        }); 
+
+        console.log(surveyData);
+    
+        // store survey data
+        writeSurveyData(surveyData);
+
         displayMessagePage(response, responseSuccessfullMessage);
     }
     catch(e) {
@@ -288,37 +378,6 @@ function getSurvey(path) {
 function getPublishedSurvey(code) {
     const survey = getSurvey('data/published_surveys/' + code + '.txt');
     return survey;
-}
-function publishSurvey(survey) {
-    // move file
-    const fromDir = 'data/my_surveys/' + survey.code + '.txt';
-    const toDir = 'data/published_surveys/' + survey.code + '.txt';
-    fs.renameSync(fromDir, toDir);
-
-    // generate take survey page
-    fs.writeFileSync('views/survey_views/' + survey.code + '.ejs', ''); 
-    updateTakeSurveyPage(survey.code);
-
-    // generate survey data file
-    let questionTexts = [];
-    survey.questions.forEach(question => {
-        questionTexts.push(question.text);
-    });
-    const surveyData = new SurveyData(survey.code, questionTexts, {});
-    const surveyDataString = JSON.stringify(surveyData);
-    fs.writeFileSync('data/survey_data/' + survey.code + '.txt', surveyDataString); 
-}
-function unpublishSurvey(survey) {
-    // move file
-    const fromDir = 'data/published_surveys/' + survey.code + '.txt';
-    const toDir = 'data/my_surveys/' + survey.code + '.txt';
-    fs.renameSync(fromDir, toDir);
-
-    // delete take survey page
-    fs.unlinkSync('views/survey_views/' + survey.code + '.ejs');
-
-    // delete survey data file
-    fs.unlinkSync('data/survey_data/' + survey.code + '.txt');
 }
 function isSurveyPublished(code) {
     let codes = getAllPublishedSurveyCodes();
@@ -368,83 +427,95 @@ function getAllPublishedSurveyCodes() {
 function savePublishedSurvey(survey) {
     writeSurvey(survey, 'data/published_surveys/' + survey.code + '.txt');
 }
-
-function pushSurvey(code) {
-    updateTakeSurveyPage(code);
-    sendNotification();
-}
-function updateTakeSurveyPage(code) {
-    let survey = getPublishedSurvey(code);
-
+function updateTakeSurveyPage(survey) {
+    let pageCode = '';
     if(survey.isFinished()) {
-        endSurvey(code);
-        return;
+        endSurvey(survey.code);
+        pageCode = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <title>Survey App | Take Survey</title>
+                <meta charset="utf-8">
+                <link rel="stylesheet" href="css/styles.css">
+            </head>
+            </body>
+                <h1>${survey.name}</h1>
+                <h3>Sorry, this survey has concluded!</h3>
+            </body>
+            </html>
+        `;
     }
+    else {
+        pageCode = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <title>Survey App | Take Survey</title>
+                <meta charset="utf-8">
+                <link rel="stylesheet" href="css/styles.css">
+            </head>
+            <body>
+                <h1>${survey.name}</h1>
+                <form action='/submitResponse/${survey.code}/<%= phoneNumber %>' method="POST">
+                <div class="question">`;
 
-    // generate html code
-    let pageCode = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <title>Survey App | Take Survey</title>
-            <meta charset="utf-8">
-            <link rel="stylesheet" href="css/styles.css">
-        </head>
-        <body>
-            <h1>${survey.name}</h1>
-            <form action='/submitResponse/${survey.code}/<%= phoneNumber %>' method="POST">
-            <div class="question">`;
-
-            // generate questions
-            for(let i=1; i<=pushQuestionCount; i++) {
-                let question = survey.getNextQuestion();
-                if(question != null) {
-                    // TF question
-                    if(question.type == 'tf') {
-                        pageCode += `<!-- T/F -->
-                            <div>
-                                <h3>${i}. ${question.text}</h3>
-                                <input type="radio" name="${i}" value="true">
-                                <label>True</label>
-                                <input type="radio" name="${i}" value="false">
-                                <label>False</label>
-                            </div>`;
-                    }
-                    // FR question
-                    else if(question.type == 'fr') {
-                        pageCode += `<!-- FR -->
-                            <div>
-                                <h3>${i}. ${question.text}</h3>
-                                <textarea rows="5" cols="60" name="${i}" placeholder="Enter text..."></textarea>
-                            </div>`;
-                    }
-                    // MC question
-                    else if(question.type == 'mc') {
-                        pageCode += `<!-- MC -->
-                            <div>
-                                <h3>${i}. ${question.text}</h3>` 
-                        question.responses.forEach(response => {
-                            pageCode += `<input type="radio" name="${i}" value="${response}">
-                            <label>${response}</label>`;
-                        });
-                        pageCode += `</div>`;
+                // generate questions
+                for(let i=1; i<=pushQuestionCount; i++) {
+                    let question = survey.getNextQuestion();
+                    if(question != null) {
+                        // TF question
+                        if(question.type == 'tf') {
+                            pageCode += `<!-- T/F -->
+                                <div>
+                                    <h3>${i}. ${question.text}</h3>
+                                    <input type="radio" name="${i}" value="true" required>
+                                    <label>True</label>
+                                    <input type="radio" name="${i}" value="false" required>
+                                    <label>False</label>
+                                </div>`;
+                        }
+                        // FR question
+                        else if(question.type == 'fr') {
+                            pageCode += `<!-- FR -->
+                                <div>
+                                    <h3>${i}. ${question.text}</h3>
+                                    <textarea rows="5" cols="60" name="${i}" placeholder="Enter text..." required></textarea>
+                                </div>`;
+                        }
+                        // MC question
+                        else if(question.type == 'mc') {
+                            pageCode += `<!-- MC -->
+                                <div>
+                                    <h3>${i}. ${question.text}</h3>` 
+                            question.responses.forEach(response => {
+                                pageCode += `<input type="radio" name="${i}" value="${response}" required>
+                                <label>${response}</label>`;
+                            });
+                            pageCode += `</div>`;
+                        }
                     }
                 }
-            }
 
-    pageCode += `
-                <br>
-                <button type="submit">Submit</button>
-            </div>
-            </form>
-        </body>
-        </html>`;
-
+        pageCode += `
+                    <br>
+                    <button type="submit">Submit</button>
+                </div>
+                </form>
+            </body>
+            </html>`;
+    }
     savePublishedSurvey(survey);
-    fs.writeFileSync('views/survey_views/' + code + '.ejs', pageCode);
+    fs.writeFileSync('views/survey_views/' + survey.code + '.ejs', pageCode);
 }
+// TODO
 function endSurvey(code) {
     // mark survey as complete
+
+    // write unanswered questions as null
+
+    // send notification to email that survey has finished
+
 }
 // TODO
 function sendNotification() {
@@ -474,27 +545,6 @@ function sendNotification() {
       //Need to send to different emails from provider and phone number
 }
 
-function submitSurveyResponse(code, phoneNumber, data) {
-    const survey = getPublishedSurvey(code);
-    let surveyData = getSurveyData(code);
-
-    // get responses
-    let responses = [];
-    for(let i=1; i<=pushQuestionCount; i++) {
-        responses.push(data[i]);
-    }
-
-    // add data
-    let i = 0;
-    responses.forEach(response => {
-        let questionIndex = survey.questionNumber+i;
-        surveyData.add(phoneNumber, response, questionIndex);
-        i++;
-    }); 
-
-    // store survey data
-    writeSurveyData(surveyData);
-}
 function getSurveyData(code) {
     const surveyDataString = fs.readFileSync('data/survey_data/' + code + '.txt');
     const surveyDataObject = JSON.parse(surveyDataString);
@@ -504,35 +554,6 @@ function getSurveyData(code) {
 function writeSurveyData(surveyData) {
     const surveyDataString = JSON.stringify(surveyData);
     fs.writeFileSync('data/survey_data/' + surveyData.code + '.txt', surveyDataString);
-}
-// TODO
-function downloadSurveyData(code) {
-    const surveyData = getSurveyData(code);
-
-    // generate csv file
-    let fileString = 'id';
-
-    surveyData.questions.forEach(question => {
-        fileString += ', ' + question.text;
-    });
-    fileString += '\n';
-
-    surveyData.data.forEach(d => {
-        fileString += d[0];
-        
-        d[1].forEach(response => {
-            fileString += ', ' + response;
-        });
-
-        fileString += '\n';
-    });
-
-    // create file
-    fs.writeFileSync('' + code + '.txt', fileString);
-
-    // download file
-
-    // delete file
 }
 
 // TODO
@@ -598,9 +619,8 @@ class Survey {
         
     }
     getNextQuestion() {
-        const haveNextQuestion = this.questionNumber <= this.questions.length;
-        
-        if(haveNextQuestion) {
+        const hasNextQuestion = this.questionNumber <= this.questions.length;
+        if(hasNextQuestion) {
             return this.questions[this.questionNumber++];
         }
         savePublishedSurvey(this);
@@ -611,6 +631,9 @@ class Survey {
             return true;
         }
         return false;
+    }
+    restartSurvey() {
+        this.questionNumber = 0;
     }
 }
 class SurveyData {
@@ -636,7 +659,6 @@ class SurveyData {
         let responses = this.responseDictionary[phoneNumber];
         const responseNumber = responses.length;
         const hasNotRespondedYet = responseNumber <= questionNumber;
-
         if(hasNotRespondedYet) {
             responses.push(response);
         }
@@ -651,10 +673,13 @@ class SurveyData {
     addPhoneNumber(phoneNumber) {
         this.responseDictionary[phoneNumber] = [];
     }
-    fillMissingResponses(phoneNumber, questionIndex) {
+    fillMissingResponses(phoneNumber, questionNumber) {
         // calculate how many questions missing
-        const responseIndex = this.responseDictionary[phoneNumber].length;
-        const missingQuestionsCount = questionIndex - responseIndex;
+        const responseNumber = this.responseDictionary[phoneNumber].length;
+        const missingQuestionsCount = questionNumber - responseNumber;
+
+        console.log('questionNumber = ' + questionNumber + ' responseNumber = ' + responseNumber);
+
         for(let i=0; i<missingQuestionsCount; i++) {
             this.responseDictionary[phoneNumber].push(null);
         }
@@ -672,18 +697,18 @@ class Message {
 var invalidCodeMessage = new Message('Invalid code', 'Please try again.');
 var alreadyJoinedMessage = new Message('Join failed', 'Looks like you already joined. No need to join twice.');
 var joinedSuccessfullyMessage = new Message('Joined survey successfully', 'Hang out until you get notified to take the survey.');
-var pushFailedMessage_invalidCode = new Message('Push failed', 'Looks like the code was invalid.');
+var pushFailedMessage = new Message('Push failed', 'Survey has ended.');
 var pushSuccessfulMessage = new Message('Push successful', 'Survey page updated... notifications sent... and now we wait.');
 var responseSuccessfullMessage = new Message('Response recorded', 'Thank you for your response!');
 var responseFailedMessage = new Message('Response failed', 'Please try again later.');
 var surveyNotFoundMessage = new Message('Survey not found', 'Please try again later.');
 
-// run server
 //Checks every 15 mins for new emails
 setInterval(() => {
     unsubscribe();
 }, 15 * 60 * 1000);
 
+// run server
 const server = http.createServer(app);
 server.listen(3000);
 console.log('running server');

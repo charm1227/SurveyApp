@@ -1,1 +1,0 @@
-{"code":8204,"name":"Test survey","phones":[],"questions":[{"type":"tf","text":"1","responses":null},{"type":"tf","text":"2","responses":null},{"type":"tf","text":"3","responses":null},{"type":"tf","text":"4","responses":null},{"type":"tf","text":"5","responses":null},{"type":"tf","text":"6","responses":null},{"type":"tf","text":"7","responses":null}],"questionNumber":8}
