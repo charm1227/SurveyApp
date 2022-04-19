@@ -123,7 +123,7 @@ app.post('/submitCreateSurvey', (request, response) => {
     }
 
     const code = generateUniqueCode();
-    const survey = new Survey(code, name, [], questions, 0, 0);
+    const survey = new Survey(code, name, [], questions, 0, 0, false);
 
     writeSurvey(survey, 'data/my_surveys/' + code + '.txt');
     response.redirect('dashboard');
@@ -294,6 +294,7 @@ app.get('/push/:surveyCode', (request, response) => {
         displayMessagePage(response, pushSuccessfulMessage);
     }
     else {
+        survey.isFinished = true;
         updateTakeSurveyPage(survey);
         displayMessagePage(response, pushSurveyCompleteMessage);
     }
@@ -575,16 +576,17 @@ class Phone {
     }
 }
 class Survey {
-    constructor(code, name, phones, questions, qIndex, rIndex) {
+    constructor(code, name, phones, questions, qIndex, rIndex, isFinished) {
         this.code = code;
         this.name = name;
         this.phones = phones;
         this.questions = questions;
         this.qIndex = qIndex;
         this.rIndex = rIndex;
+        this.isFinished = isFinished;
     }
     static createFrom(survey) {
-        return new Survey(survey.code, survey.name, survey.phones, survey.questions, survey.qIndex, survey.rIndex);
+        return new Survey(survey.code, survey.name, survey.phones, survey.questions, survey.qIndex, survey.rIndex, survey.isFinished);
     }
     subscribe(phone) {
         this.phones.push(phone);
@@ -605,6 +607,10 @@ class Survey {
         this.phones = [];
         this.qIndex = 0;
         this.rIndex = 0;
+        this.isFinished = false;
+    }
+    getProgressPercent() {
+        return (this.qIndex / this.questions.length) * 100;
     }
 }
 class SurveyData {

@@ -11,8 +11,11 @@ form {
 
 .survey {
   background-color: #f1f1f1;
-  width: 240px;
+  width: 280px;
   height: 70px;
+}
+
+.surveyControls {
   font-size: 12pt;
   font-weight: 500;
   display: grid;

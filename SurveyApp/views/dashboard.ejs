@@ -15,7 +15,7 @@
 
             <!-- My surveys -->
             <% data.mySurveys.forEach(survey => { %>
-                <div class="survey">
+                <div class="survey surveyControls">
                     <label class="surveyCode"><%= survey.code %></label>
                     <label><%= survey.name %></label>
                     <input class="buttonIcon" onclick="window.location.href = '/editSurvey/<%= survey.code %>';" type="image" src="icons/edit.png" alt="edit" name="edit icon">
@@ -36,11 +36,21 @@
             <!-- Published surveys -->
             <% data.publishedSurveys.forEach(survey => { %>
                 <div class="survey">
-                    <label class="surveyCode"><%= survey.code %></label>
-                    <label><%= survey.name %></label>
-                    <input class="buttonIcon" onclick="window.location.href = '/downloadSurveyData/<%= survey.code %>';" type="image" src="icons/download.png" alt="download" name="download icon">
-                    <input class="buttonIcon" onclick="window.location.href = '/push/<%= survey.code %>';" type="image" src="icons/bell-ring.png" alt="push" name="push icon">
-                    <input class="buttonIcon" onclick="window.location.href = '/unpublishSurvey/<%= survey.code %>';" type="image" src="icons/x.png" alt="unpublish" name="minus icon">
+                    <div class="surveyControls">
+                        <label class="surveyCode"><%= survey.code %></label>
+                        <label><%= survey.name %></label>
+                        <input class="buttonIcon" onclick="window.location.href = '/downloadSurveyData/<%= survey.code %>';" type="image" src="icons/download.png" alt="download" name="download icon">
+                        <input class="buttonIcon" onclick="window.location.href = '/push/<%= survey.code %>';" type="image" src="icons/bell-ring.png" alt="push" name="push icon">
+                        <input class="buttonIcon" onclick="window.location.href = '/unpublishSurvey/<%= survey.code %>';" type="image" src="icons/x.png" alt="unpublish" name="minus icon">
+                    </div>
+                    <div class="surveyControls"> 
+                        <% if(survey.isFinished) { %>
+                            <progress id="progress_bar" value=<%= survey.getProgressPercent() %> max="100"></progress>
+                            <label>Done</label>
+                        <% } else { %>
+                            <progress id="progress_bar" value=<%= survey.getProgressPercent()-10 %> max="100"></progress>
+                        <% } %>
+                    </div>
                 </div>
                 <br>
             <% }); %>
