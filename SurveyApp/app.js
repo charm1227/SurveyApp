@@ -556,14 +556,13 @@ function endSurvey(code) {
     // send notification to email that survey has finished
 
 }
-// TODO
-function sendNotification(phone) {
-    try {
+
+function sendText(phone, message) {
+     try {
         const time = new Date().toDateString();
         let info =  transporter.sendMail({
           from: SEND_MAIL_CONFIG.auth.user,
-          to: SEND_MAIL_CONFIG.auth.user,
-          subject: 'Hello ✔',
+          to: 'kaimoore88@gmail.com',
           html: `
           <div
             class="container"
@@ -571,21 +570,14 @@ function sendNotification(phone) {
           >
             <h2>This is a testing email</h2>
             <p>Please ignore this mail</p>
-            <p>sent at ${time}</p>
+            <p>sent at </p>
           </div>
         `,
         });
-        console.log(`MAIL INFO: ${info}`);
-        console.log(`MAIL SENT AT: ${time}`);
       } catch (error) {
         console.log(error);
         return false;
       }
-      //Need to send to different emails from provider and phone number
-}
-
-function sendText(phone, message) {
-
 }
 function sendEmail(address, message) {
 
