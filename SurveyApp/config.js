@@ -1,8 +1,9 @@
 module.exports.SEND_MAIL_CONFIG = {
     service: 'gmail',
+    host: 'smtp.gmail.com',
     auth: {
-    user: process.env.surveyapplication2022,
-    pass: process.env.AdminHSB2022,
+        user: 'surveyapplication2022@gmail.com',
+        pass: 'AdminHSB2022',
     },
 };
 
