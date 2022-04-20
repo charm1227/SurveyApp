@@ -9,17 +9,22 @@
 <body>
 	<form action="/submitJoin" method="POST">
 		<label for="code"><b>Code</b></label>
+		<br>
 		<input type="number" placeholder="enter code..." name="code" required>
+		<br>
 		<label for="Phone"><b>Phone Number</b></label>
+		<br>
 		<input type="number" placeholder="enter a phone number..." name="phone" min="0000000000" max="9999999999" required>
-		<p>Please Select Your Service Provider</p>
+		<br>
+		<label><b>Service Provider</b></label>
+		<br>
 		<input type="radio" id="AT&T" name="service_provider" value="@txt.att.net">
 		<label for="AT&T">AT&amp;T</label><br>
 		<input type="radio" id="Verizon" name="service_provider" value="@vtext.com">
 		<label for="Verizon">Verizon</label><br>
 		<input type="radio" id="T-Mobile" name="service_provider" value="@tmomail.net">
 		<label for="T-Mobile">T-Mobile</label>	
-
+		<br>
 		<button type="submit" class="button" onclick="authenticatecode()">Join</button>
 	</form>
 

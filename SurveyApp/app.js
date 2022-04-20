@@ -18,7 +18,6 @@ let activeUser = null;
 // ---------
 let username = 'admin';
 let password = 'password';
-const pushQuestionCount = 3;
 // ---------
 
 app.use(express.static(__dirname + '/public')); // make public directory accessible to client
@@ -80,15 +79,23 @@ app.post('/submitCreateSurvey', (request, response) => {
     
     // create survey from form
     let name = '';
+    let pushTime = 3;
+    let pushCount = 3;
     let questions = [];
-    for(const key in body) {
-        value = body[key];
-        if(key == 'survey_name') {
+    for(const id in body) {
+        value = body[id];
+        if(id == 'survey_name') {
             name = value;
+        }
+        else if(id == 'push_time_days') {
+            pushTime = value;
+        }
+        else if(id == 'push_count') {
+            pushCount = value;
         }
         else {
             // parse the key
-            let keyParts = key.split('_');
+            let keyParts = id.split('_');
             let qIndex = keyParts[0].replace('q', '');
             let qDataType = keyParts[1];
 
@@ -123,7 +130,7 @@ app.post('/submitCreateSurvey', (request, response) => {
     }
 
     const code = generateUniqueCode();
-    const survey = new Survey(code, name, [], questions, 0, 0, false);
+    const survey = new Survey(code, name, pushTime, pushCount, [], questions, 0, 0, false);
 
     writeSurvey(survey, 'data/my_surveys/' + code + '.txt');
     response.redirect('dashboard');
@@ -290,7 +297,7 @@ app.get('/push/:surveyCode', (request, response) => {
     let survey = getPublishedSurvey(code);
 
     if(!survey.outOfQuestions()) {
-        survey.rIndex += pushQuestionCount;
+        survey.rIndex += parseInt(survey.pushCount);
         savePublishedSurvey(survey);
         updateTakeSurveyPage(survey);
         //sendNotification();
@@ -317,13 +324,12 @@ app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
     const code = request.params.surveyCode;
     const phoneNumber = request.params.phoneNumber;
     var data = request.body;
-    
     const survey = getPublishedSurvey(code);
     let surveyData = getSurveyData(code);
 
     // get responses
     let newResponses = [];
-    for(let i=1; i<=pushQuestionCount; i++) {
+    for(let i=1; i<=survey.pushCount; i++) {
         if(data[i] != undefined) {
             newResponses.push(data[i]);
         }
@@ -331,7 +337,7 @@ app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
 
     // add data
     for(let i=0; i<newResponses.length; i++) {
-        let rAddIndex = survey.rIndex + i;        
+        let rAddIndex = survey.rIndex + i;      
         surveyData.add(phoneNumber, newResponses[i], rAddIndex);
     }
 
@@ -339,6 +345,9 @@ app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
     writeSurveyData(surveyData);
 
     displayMessagePage(response, responseSuccessfullMessage);
+});
+app.get('/settings/:settings', (request, response) => {
+
 });
 app.get('/message/:title/:message', (request, response) => {
     const title = request.params.title;
@@ -349,6 +358,7 @@ app.get('/message/:title/:message', (request, response) => {
 // ----- FUNCTIONS -----
 
 function authorized(request) {
+    // read from login 
     let loggedIn = activeUser != null;
     let currentUser = JSON.stringify(activeUser) === JSON.stringify(request.socket.remoteAddress);
     if(!loggedIn || !currentUser) {
@@ -454,7 +464,7 @@ function updateTakeSurveyPage(survey) {
                 <div class="question">`;
 
                 // generate questions
-                for(let i=1; i<=pushQuestionCount; i++) {
+                for(let i=1; i<=survey.pushCount; i++) {
                     let question = survey.getNextQuestion();
                     if(question != null) {
                         // TF question
@@ -488,7 +498,6 @@ function updateTakeSurveyPage(survey) {
                             pageCode += `</div>`;
                         }
                     }
-                
                 }
 
         pageCode += `
@@ -598,9 +607,11 @@ class Phone {
     }
 }
 class Survey {
-    constructor(code, name, phones, questions, qIndex, rIndex, isFinished) {
+    constructor(code, name, pushTime, pushCount, phones, questions, qIndex, rIndex, isFinished) {
         this.code = code;
         this.name = name;
+        this.pushTime = pushTime;
+        this.pushCount = pushCount;
         this.phones = phones;
         this.questions = questions;
         this.qIndex = qIndex;
@@ -608,7 +619,7 @@ class Survey {
         this.isFinished = isFinished;
     }
     static createFrom(survey) {
-        return new Survey(survey.code, survey.name, survey.phones, survey.questions, survey.qIndex, survey.rIndex, survey.isFinished);
+        return new Survey(survey.code, survey.name, survey.pushTime, survey.pushCount, survey.phones, survey.questions, survey.qIndex, survey.rIndex, survey.isFinished);
     }
     subscribe(phone) {
         this.phones.push(phone);
@@ -676,9 +687,17 @@ class SurveyData {
         // calculate how many questions missing
         const responseNumber = this.responseDictionary[phoneNumber].length;
         const missingQuestionsCount = questionNumber - responseNumber;
+
         for(let i=0; i<missingQuestionsCount; i++) {
             this.responseDictionary[phoneNumber].push(null);
         }
+    }
+}
+class Profile {
+    constructor(email, username, password) {
+        this.email = email;
+        this.username = username;
+        this.password = password;
     }
 }
 class Message {

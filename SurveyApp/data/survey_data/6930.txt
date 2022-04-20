@@ -1,1 +1,0 @@
-{"code":6930,"questions":["What is Kelly's nickname?","Is Kelly a cat person?","is Kelly a dog person?","Describe kelly in 1 word.","What is Kelly's favorite animal?","What is Kelly's favorite color?","How long can Kelly hold her breath?","Is Kelly hiding right now?"],"responseDictionary":{}}
