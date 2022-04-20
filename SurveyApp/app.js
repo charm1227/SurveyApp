@@ -135,6 +135,9 @@ app.get('/editSurvey/:surveyCode', (request, response) => {
         return;
     }
     const code = request.params.surveyCode;
+    let survey = getSurvey('data/my_surveys/' + code + '.txt');
+    //generateEditSurveyPage(survey);
+    response.render('editSurvey');
 });
 app.get('/deleteSurvey/:surveyCode', (request, response) => {
     if(!authorized(request)) {
@@ -424,33 +427,27 @@ function savePublishedSurvey(survey) {
     writeSurvey(survey, 'data/published_surveys/' + survey.code + '.txt');
 }
 function updateTakeSurveyPage(survey) {
-    let pageCode = '';
+    // header
+    let pageCode = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <title>Survey App | Take Survey</title>
+        <meta charset="utf-8">
+        <link rel="stylesheet" type="text/css" href="/css/styles.css">
+    </head>`;
+
+    // body
     if(survey.outOfQuestions()) {
         endSurvey(survey.code);
-        pageCode = `
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <title>Survey App | Take Survey</title>
-                <meta charset="utf-8">
-                <link rel="stylesheet" href="css/styles.css">
-            </head>
+        pageCode += `
             </body>
                 <h1>${survey.name}</h1>
                 <h3>Sorry, this survey has concluded!</h3>
-            </body>
-            </html>
-        `;
+            </body>`;
     }
     else {
-        pageCode = `
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <title>Survey App | Take Survey</title>
-                <meta charset="utf-8">
-                <link rel="stylesheet" href="css/styles.css">
-            </head>
+        pageCode += `
             <body>
                 <h1>${survey.name}</h1>
                 <form action='/submitResponse/${survey.code}/<%= phoneNumber %>' method="POST">
@@ -499,9 +496,16 @@ function updateTakeSurveyPage(survey) {
                     <button type="submit">Submit</button>
                 </div>
                 </form>
-            </body>
-            </html>`;
+            </body>`;
     }
+
+    // footer
+    pageCode += `
+        <footer>
+            <p class="attribution">Uicons by <a href="https://www.flaticon.com/uicons">Flaticon</a></p>
+        </footer>
+        </html>`;
+
     savePublishedSurvey(survey);
     fs.writeFileSync('views/survey_views/' + survey.code + '.ejs', pageCode);
 }
@@ -515,6 +519,24 @@ function writeSurveyData(surveyData) {
     const surveyDataString = JSON.stringify(surveyData);
     fs.writeFileSync('data/survey_data/' + surveyData.code + '.txt', surveyDataString);
 } 
+
+// function generateEditSurveyPage(survey) {
+//     let pageCode = '';
+
+//     // generate html for each question
+//     survey.questions.forEach(question => {
+//         pageCode += 
+//         ``;
+
+//         if(question.type == 'mc') {
+//             // generate html for each response
+//             question.responses.forEach(response => {
+
+//             });
+//         }
+//     });
+//     fs.writeFileSync('views/editSurvey.ejs', pageCode);
+// }
 
 // TODO
 function endSurvey(code) {
