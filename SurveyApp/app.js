@@ -885,8 +885,13 @@ function endSurvey(code) {
 
 }
 function sendSurveyNotification(survey) {
+
     survey.phones.forEach(phone => {
-        sendText(phone,'Hello');
+        let text = 'Time to take the survey! Follow this link: ';
+        text += generateTakeSurveyLink(survey.code, phone.number);
+        text += '\n\n' + 'To unsubscribe follow this link: ';
+        text += generateUnsubscribeLink(survey.code, phone.number);
+        sendText(phone, text);
     });
 
 }
