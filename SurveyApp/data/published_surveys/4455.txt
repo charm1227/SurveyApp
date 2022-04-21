@@ -1,1 +1,0 @@
-{"code":4455,"name":"Testing survey","pushTime":"1","pushCount":"2","phones":[],"questions":[{"type":"tf","text":"1","responses":null},{"type":"tf","text":"2","responses":null},{"type":"tf","text":"3","responses":null},{"type":"tf","text":"4","responses":null},{"type":"tf","text":"5","responses":null}],"qIndex":5,"rIndex":4,"isFinished":true}

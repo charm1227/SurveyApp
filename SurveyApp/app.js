@@ -24,6 +24,11 @@ app.use(express.static(__dirname + '/public')); // make public directory accessi
 app.use(bodyParser.urlencoded({ extended: true })); // use body parser
 app.set('view engine', 'ejs');
 
+// ----- VARIABLES -----
+
+let pushTimerDict = [];
+var today = new Date();
+
 // ----- ROUTES -----
 
 app.get('/', (request, response) => {
@@ -185,6 +190,12 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
     const surveyDataString = JSON.stringify(surveyData);
     fs.writeFileSync('data/survey_data/' + survey.code + '.txt', surveyDataString); 
 
+    // start push timer
+    var timer = new Timer(() => {
+        push(survey.code);
+    }, survey.pushTime * 60 * 60 * 24 * 1000);
+    pushTimerDict.push({key : survey.code, value : timer});
+
     response.redirect('/dashboard');
 });
 app.get('/unpublishSurvey/:surveyCode', (request, response) => {
@@ -194,6 +205,9 @@ app.get('/unpublishSurvey/:surveyCode', (request, response) => {
     }
     const code = request.params.surveyCode;
     let survey = getSurvey('data/published_surveys/' + code + '.txt');
+
+    // remove push timer
+    removePushTimer(survey);
 
     // reset survey
     survey.reset();
@@ -251,7 +265,7 @@ app.get('/download/:file', (request, response) => {
     }
     const file = request.params.file;
     response.download(file, () => {
-        fs.unlinkSync(file); // remove temp file after download
+        fs.unlinkSync(file); // remove temp file
     });
 });
 app.get('/join', (request, response) => {
@@ -287,7 +301,6 @@ app.post('/submitJoin', (request, response) => {
         displayMessagePage(response, invalidCodeMessage);
     }
 });
-// TODO - send notifications
 app.get('/push/:surveyCode', (request, response) => {
     if(!authorized(request)) {
         response.redirect('/');
@@ -296,18 +309,16 @@ app.get('/push/:surveyCode', (request, response) => {
     const code = request.params.surveyCode;
     let survey = getPublishedSurvey(code);
 
-    if(!survey.outOfQuestions()) {
-        survey.rIndex += parseInt(survey.pushCount);
-        savePublishedSurvey(survey);
-        updateTakeSurveyPage(survey);
-        //sendNotification();
-        displayMessagePage(response, pushSuccessfulMessage);
+    for(let i=0; i<pushTimerDict.length; i++) {
+        if(pushTimerDict[i].key == survey.code) {
+            push(survey.code);
+            pushTimerDict[i].value.reset();
+            response.redirect('/');
+            return;
+        }
     }
-    else {
-        survey.isFinished = true;
-        updateTakeSurveyPage(survey);
-        displayMessagePage(response, pushSurveyCompleteMessage);
-    }
+
+    response.redirect('/');
 });
 app.get('/takeSurvey/:surveyCode/:phoneNumber', (request, response) => {
     const code = request.params.surveyCode;
@@ -529,6 +540,52 @@ function writeSurveyData(surveyData) {
     fs.writeFileSync('data/survey_data/' + surveyData.code + '.txt', surveyDataString);
 } 
 
+// TODO send notificaitons
+function push(code) {
+    if(isSurveyPublished(code)) {
+        let survey = getPublishedSurvey(code);
+        if(!survey.outOfQuestions()) {
+            survey.rIndex += parseInt(survey.pushCount);
+            savePublishedSurvey(survey);
+            updateTakeSurveyPage(survey);
+            //sendNotification();
+        }
+        else {
+            survey.isFinished = true;
+            updateTakeSurveyPage(survey);
+            removePushTimer(survey);
+        }
+    }
+}
+function removePushTimer(survey) {
+    for(let i=0; i<pushTimerDict.length; i++) {
+        if(pushTimerDict[i].key == survey.code) {
+            pushTimerDict[i].value.stop();
+            pushTimerDict.splice(i, 1);
+        }
+    }
+}
+function Timer(fn, t) {
+    var timerObj = setInterval(fn, t);
+    this.stop = function() {
+        if (timerObj) {
+            clearInterval(timerObj);
+            timerObj = null;
+        }
+        return this;
+    }
+    this.start = function() {
+        if (!timerObj) {
+            this.stop();
+            timerObj = setInterval(fn, t);
+        }
+        return this;
+    }
+    this.reset = function() {
+        return this.stop().start();
+    }
+}
+
 // function generateEditSurveyPage(survey) {
 //     let pageCode = '';
 
@@ -698,6 +755,8 @@ class Message {
         this.text = text;
     }
 }
+
+
 
 // ----- MESSAGES -----
 
