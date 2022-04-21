@@ -785,7 +785,7 @@ function push(code) {
             survey.rIndex += parseInt(survey.pushCount);
             savePublishedSurvey(survey);
             updateTakeSurveyPage(survey);
-            //sendNotification();
+            sendSurveyNotification(survey);
         }
         else {
             survey.isFinished = true;
@@ -825,6 +825,7 @@ function Timer(fn, t) {
 function startSurvey(code) {
     let survey = getPublishedSurvey(code);
     updateTakeSurveyPage(survey);
+    sendSurveyNotification(survey);
     var timer = new Timer(() => {
         push(code);
     }, survey.pushTime * 60 * 60 * 24 * 1000);
@@ -883,13 +884,19 @@ function endSurvey(code) {
     // send notification to email that survey has finished
 
 }
+function sendSurveyNotification(survey) {
+    survey.phones.forEach(phone => {
+        sendText(phone,'Hello');
+    });
 
+}
+//Notication System
 function sendText(phone, message) {
      try {
         const time = new Date().toDateString();
         let info =  transporter.sendMail({
           from: SEND_MAIL_CONFIG.auth.user,
-          to: 'kaimoore88@gmail.com',
+          to: phone.number+''+phone.provider,
           html: `
           <div
             class="container"
@@ -906,6 +913,8 @@ function sendText(phone, message) {
         return false;
       }
 }
+
+//2FA authentication
 function sendEmail(address, message) {
 
 }
