@@ -197,7 +197,6 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
     `;
     fs.writeFileSync('views/survey_views/' + survey.code + '.ejs', pageCode);
 
-
     // generate survey data file
     let questionTexts = [];
     survey.questions.forEach(question => {
@@ -294,6 +293,8 @@ app.get('/startSurvey/:surveyCode', (request, response) => {
         push(code);
     }, survey.pushTime * 60 * 60 * 24 * 1000);
     pushTimerDict.push({key : survey.code, value : timer});
+
+    
 
     response.redirect('/dashboard');
 });

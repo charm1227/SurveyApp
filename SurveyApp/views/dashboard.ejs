@@ -39,7 +39,9 @@
                     <div class="surveyControls">
                         <label class="surveyCode"><%= survey.code %></label>
                         <label><%= survey.name %></label>
-                        <input class="buttonIcon" onclick="window.location.href = '/startSurvey/<%= survey.code %>';" type="image" src="icons/play.png" alt="start" name="start icon">
+                        <% if(survey.getProgressPercent() == 0) { %>
+                            <input class="buttonIcon" onclick="window.location.href = '/startSurvey/<%= survey.code %>';" type="image" src="icons/play.png" alt="start" name="start icon">
+                        <% } %>
                         <input class="buttonIcon" onclick="window.location.href = '/push/<%= survey.code %>';" type="image" src="icons/smartphone.png" alt="push" name="push icon">
                         <input class="buttonIcon" onclick="window.location.href = '/downloadSurveyData/<%= survey.code %>';" type="image" src="icons/download.png" alt="download" name="download icon">
                         <input class="buttonIcon" onclick="window.location.href = '/unpublishSurvey/<%= survey.code %>';" type="image" src="icons/x.png" alt="unpublish" name="remove icon">
