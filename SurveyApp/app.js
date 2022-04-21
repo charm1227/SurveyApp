@@ -143,7 +143,9 @@ class Message {
 // ----- VARIABLES -----
 let pushTimerDict = [];
 let code2fa = null;
-var today = new Date();
+let today = new Date();
+let invalidLoginAttempts = 0;
+
 
 // ----- MESSAGES -----
 
@@ -177,9 +179,15 @@ app.post('/submitLogin', (request, response) => {
     let validPassword = profile.password == request.body.password;
 
     if(validUsername && validPassword) {
+        invalidLoginAttempts = 0;
         activeUser = request.socket.remoteAddress;
         response.redirect('/dashboard');
         return;
+    }
+    invalidLoginAttempts++;
+
+    if(invalidLoginAttempts >= 5) {
+        alertBruteForce();
     }
     response.redirect('/login');
 }); 
@@ -235,7 +243,7 @@ app.post('/submitProfile2fa', (request, response) => {
         response.render('profile');
     }
     else {
-        invalidCodeAttempt();
+        alertInvalid2faAttempt();
         displayMessagePage(response, invalid2faCodeMessage);
     }
 });
@@ -576,9 +584,6 @@ app.post('/submitResponse/:surveyCode/:phoneNumber/', (request, response) => {
 
     displayMessagePage(response, responseSuccessfullMessage);
 });
-app.get('/settings/:settings', (request, response) => {
-
-});
 app.get('/message/:title/:message', (request, response) => {
     const title = request.params.title;
     const message = request.params.message;
@@ -592,7 +597,6 @@ function getProfile() {
     // read file
     // decrypt
     // convert to object
-
     return new Profile('email@gmail.com', 'admin', 'password');
 }
 // TODO save new profile data
@@ -848,11 +852,9 @@ function continueActiveSurveys() {
     });
 }
 
-// TODO test full link
 function generateUnsubscribeLink(code, phoneNumber) {
     return 'ec2-54-177-203-54.us-west-1.compute.amazonaws.com/unsubscribe/' + code + '/' + phoneNumber;
 }
-// TODO  test full link
 function generateTakeSurveyLink(code, phoneNumber) {
     return 'ec2-54-177-203-54.us-west-1.compute.amazonaws.com/takeSurvey/' + code + '/' + phoneNumber;
 }
@@ -895,7 +897,8 @@ function sendSurveyNotification(survey) {
     });
 
 }
-//Notication System
+
+
 function sendText(phone, message) {
      try {
         const time = new Date().toDateString();
@@ -918,15 +921,20 @@ function sendText(phone, message) {
         return false;
       }
 }
+// KAI TODO - send email to profile.email
+function sendEmail(message) {
+    let profile = getProfile();
 
-//2FA authentication
-function sendEmail(address, message) {
-
+    // TODO send email to profile.email with message as contents
 }
 
-// TODO alert user via email
-function invalidCodeAttempt() {
-
+// TEST
+function alertInvalid2faAttempt() {
+    sendEmail('Invalid 2FA attempt. \n\n Someone has attempted to access your account with an invalid 2FA code. This means someone has access to your account details. Please change your username and password to secure your account.');
+}
+// TEST
+function alertBruteForce() {
+    sendEmail('Brute force detected. \n\nMore than 5 invalid login attempts were detected. ')
 }
 
 // run server
