@@ -178,8 +178,25 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
     savePublishedSurvey(survey);
 
     // generate take survey page
-    fs.writeFileSync('views/survey_views/' + survey.code + '.ejs', ''); 
-    updateTakeSurveyPage(survey);
+    let pageCode = `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <title>Survey App | Message</title>
+            <meta charset="utf-8">
+            <link rel="stylesheet" href="/css/styles.css" type="text/css">
+        </head>
+        <body>
+            <h1>Hang Tight</h1>
+            <h3>Survey starting soon!</h3>
+        </body>
+        <footer>
+            <p class="attribution">Uicons by <a href="https://www.flaticon.com/uicons">Flaticon</a></p>
+        </footer>
+        </html>
+    `;
+    fs.writeFileSync('views/survey_views/' + survey.code + '.ejs', pageCode);
+
 
     // generate survey data file
     let questionTexts = [];
@@ -189,12 +206,6 @@ app.get('/publishSurvey/:surveyCode', (request, response) => {
     const surveyData = new SurveyData(survey.code, questionTexts, {});
     const surveyDataString = JSON.stringify(surveyData);
     fs.writeFileSync('data/survey_data/' + survey.code + '.txt', surveyDataString); 
-
-    // start push timer
-    var timer = new Timer(() => {
-        push(survey.code);
-    }, survey.pushTime * 60 * 60 * 24 * 1000);
-    pushTimerDict.push({key : survey.code, value : timer});
 
     response.redirect('/dashboard');
 });
@@ -268,6 +279,24 @@ app.get('/download/:file', (request, response) => {
         fs.unlinkSync(file); // remove temp file
     });
 });
+app.get('/startSurvey/:surveyCode', (request, response) => {
+    if(!authorized(request)) {
+        response.redirect('/');
+        return;
+    }
+    const code = request.params.surveyCode;
+    let survey = getPublishedSurvey(code);
+
+    updateTakeSurveyPage(survey);
+
+    // start push timer
+    var timer = new Timer(() => {
+        push(code);
+    }, survey.pushTime * 60 * 60 * 24 * 1000);
+    pushTimerDict.push({key : survey.code, value : timer});
+
+    response.redirect('/dashboard');
+});
 app.get('/join', (request, response) => {
     response.sendFile(__dirname + '/views/join.html');
 });
@@ -311,8 +340,8 @@ app.get('/push/:surveyCode', (request, response) => {
 
     for(let i=0; i<pushTimerDict.length; i++) {
         if(pushTimerDict[i].key == survey.code) {
-            push(survey.code);
             pushTimerDict[i].value.reset();
+            push(survey.code);
             response.redirect('/');
             return;
         }
