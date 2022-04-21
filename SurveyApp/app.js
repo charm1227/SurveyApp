@@ -851,6 +851,10 @@ function continueActiveSurveys() {
 function generateUnsubscribeLink(code, phoneNumber) {
     return 'ec2-54-177-203-54.us-west-1.compute.amazonaws.com/unsubscribe/' + code + '/' + phoneNumber;
 }
+// TODO  test full link
+function generateTakeSurveyLink(code, phoneNumber) {
+    return 'ec2-54-177-203-54.us-west-1.compute.amazonaws.com/takeSurvey/' + code + '/' + phoneNumber;
+}
 
 // function generateEditSurveyPage(survey) {
 //     let pageCode = '';
