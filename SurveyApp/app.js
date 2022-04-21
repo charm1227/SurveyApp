@@ -887,7 +887,7 @@ function endSurvey(code) {
 function sendSurveyNotification(survey) {
 
     survey.phones.forEach(phone => {
-        let text = 'Time to take the survey! Follow this link: ';
+        let text = 'Time to take a survey! Follow this link: ';
         text += generateTakeSurveyLink(survey.code, phone.number);
         text += '\n\n' + 'To unsubscribe follow this link: ';
         text += generateUnsubscribeLink(survey.code, phone.number);
