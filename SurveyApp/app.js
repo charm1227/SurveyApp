@@ -889,13 +889,12 @@ function endSurvey(code) {
 function sendSurveyNotification(survey) {
 
     survey.phones.forEach(phone => {
-        let text = 'Time to take a survey! Follow this link: ';
-        text += generateTakeSurveyLink(survey.code, phone.number);
-        text += '\n\n' + 'To unsubscribe follow this link: ';
-        text += generateUnsubscribeLink(survey.code, phone.number);
-        sendText(phone, text);
+        let message = 'Time to take a survey! Follow this link: ';
+        message += generateTakeSurveyLink(survey.code, phone.number);
+        message += ' To unsubscribe follow this link: ';
+        message += generateUnsubscribeLink(survey.code, phone.number);
+        sendText(phone, message);
     });
-
 }
 
 
@@ -905,16 +904,7 @@ function sendText(phone, message) {
         let info =  transporter.sendMail({
           from: SEND_MAIL_CONFIG.auth.user,
           to: phone.number+''+phone.provider,
-          html: `
-          <div
-            class="container"
-            style="max-width: 90%; margin: auto; padding-top: 20px"
-          >
-            <h2>This is a testing email</h2>
-            <p>Please ignore this mail</p>
-            <p>sent at </p>
-          </div>
-        `,
+          html: message,
         });
       } catch (error) {
         console.log(error);
