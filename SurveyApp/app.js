@@ -794,7 +794,7 @@ function updateTakeSurveyPage(survey) {
 
         pageCode += `
                     <br>
-                    <button type="submit">Submit</button>
+                    <button class="button" type="submit">Submit</button>
                 </div>
                 </form>
             </body>`;
