@@ -1,17 +1,35 @@
 
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <title>Survey App | Message</title>
-            <meta charset="utf-8">
-            <link rel="stylesheet" href="/css/styles.css" type="text/css">
-        </head>
-        <body>
-            <h1>Hang Tight</h1>
-            <h3>Survey starting soon!</h3>
-        </body>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <title>Survey App | Take Survey</title>
+        <meta charset="utf-8">
+        <link rel="stylesheet" type="text/css" href="/css/styles.css">
+    </head>
+            <body>
+                <h1>The test</h1>
+                <form action='/submitResponse/3785/<%= phoneNumber %>' method="POST">
+                <div class="question"><!-- T/F -->
+                                <div>
+                                    <h3>1. 1</h3>
+                                    <input type="radio" name="1" value="true" required>
+                                    <label>True</label>
+                                    <input type="radio" name="1" value="false" required>
+                                    <label>False</label>
+                                </div><!-- T/F -->
+                                <div>
+                                    <h3>2. 2</h3>
+                                    <input type="radio" name="2" value="true" required>
+                                    <label>True</label>
+                                    <input type="radio" name="2" value="false" required>
+                                    <label>False</label>
+                                </div>
+                    <br>
+                    <button type="submit">Submit</button>
+                </div>
+                </form>
+            </body>
         <footer>
             <p class="attribution">Uicons by <a href="https://www.flaticon.com/uicons">Flaticon</a></p>
         </footer>
         </html>
-    

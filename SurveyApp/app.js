@@ -1,7 +1,6 @@
-// init
 const express = require('express');
 const app = express(); 
-const bodyParser = require('body-parser'); // allows us to access data from forms
+const bodyParser = require('body-parser'); 
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
@@ -16,8 +15,8 @@ const algorithm = 'aes-256-ctr';
 const secretKey = 'vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3';
 const iv = crypto.randomBytes(16);
 
-app.use(express.static(__dirname + '/public')); // make public directory accessible to client
-app.use(bodyParser.urlencoded({ extended: true })); // use body parser
+app.use(express.static(__dirname + '/public')); 
+app.use(bodyParser.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 
 // ----- CLASSES -----
@@ -222,20 +221,14 @@ app.post('/submitUpdatedProfile', (request, response) => {
     updateProfile(email, username, password);
     response.redirect('/dashboard');
 });
-// TEST 2fa email
 app.get('/profile2fa', (request, response) => {
     if(!authorized(request)) {
         response.redirect('/');
         return;
     }
-
-    // generate code
+    // send 2fa code
     code2fa = generate2faCode();
-    console.log(code2fa);
-
-    // send code
     sendEmail(code2fa);
-
     response.render('profile2fa');
 });
 app.post('/submitProfile2fa', (request, response) => {
@@ -835,6 +828,7 @@ function push(code) {
             survey.isFinished = true;
             updateTakeSurveyPage(survey);
             removePushTimer(survey);
+            sendEmail('Your survey has finished! All questions have been asked, and the survey has been closed!');
         }
     }
 }
@@ -938,19 +932,18 @@ function sendSurveyNotification(survey) {
 }
 function sendText(phone, message) {
     try {
-    const time = new Date().toDateString();
-    let info =  transporter.sendMail({
-        from: SEND_MAIL_CONFIG.auth.user,
-        to: phone.number+''+phone.provider,
-        html: message,
+        const time = new Date().toDateString();
+        let info =  transporter.sendMail({
+            from: SEND_MAIL_CONFIG.auth.user,
+            to: phone.number+''+phone.provider,
+            subject: 'Survey App',
+            text: message,
     });
     } catch (error) {
         console.log(error);
         return false;
     }
 }
-
-
 function sendEmail(message) {
     let profile = getProfile();
     console.log('email', profile.email);
@@ -959,7 +952,8 @@ function sendEmail(message) {
         let info =  transporter.sendMail({
             from: SEND_MAIL_CONFIG.auth.user,
             to: profile.email,
-            html: message.toString(),
+            subject: 'Survey App',
+            text: message.toString(),
         });
     } catch (error) {
         console.log(error);
