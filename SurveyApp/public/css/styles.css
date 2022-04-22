@@ -135,4 +135,11 @@ textarea {
 @media screen and (max-width: 600px) {
   .mobile10 {
 	  width: 300px; font-size: 10pt;
+	}
+.mobile10 h1{
+	width: 300px; font-size: 12pt;
+	}
+.mobile10 h3{
+	width: 300px; font-size: 8pt;
+	}
 }
