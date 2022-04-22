@@ -131,3 +131,8 @@ textarea {
 .attribution {
   font-size: 8pt;
 }
+
+@media screen and (max-width: 600px) {
+  .mobile10 {
+	  width: 300px; font-size: 10pt;
+}
