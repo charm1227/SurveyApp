@@ -5,27 +5,29 @@ const bodyParser = require('body-parser'); // allows us to access data from form
 const http = require('http');
 const path = require('path');
 const fs = require('fs');
-const bcrypt = require('bcrypt');
 const { debug } = require('console');
 const { closeDelimiter } = require('ejs');
 const nodemailer = require('nodemailer');
 const { SEND_MAIL_CONFIG } = require('./config');
 const transporter = nodemailer.createTransport(SEND_MAIL_CONFIG);
 
-let activeUser = null;
-
-// TEMPORARY
-// ---------
-let username = 'admin';
-let password = 'password';
-// ---------
+const crypto = require('crypto');
+const algorithm = 'aes-256-ctr';
+const secretKey = 'vOVH6sdmpNWjRRIqCc7rdxs01lwHzfr3';
+const iv = crypto.randomBytes(16);
 
 app.use(express.static(__dirname + '/public')); // make public directory accessible to client
 app.use(bodyParser.urlencoded({ extended: true })); // use body parser
 app.set('view engine', 'ejs');
 
 // ----- CLASSES -----
-
+class Profile {
+    constructor(email, username, password) {
+        this.email = email;
+        this.username = username;
+        this.password = password;
+    }
+}
 class Question {
     constructor(type, text, responses) {
         this.type = type;
@@ -126,13 +128,6 @@ class SurveyData {
         }
     }
 }
-class Profile {
-    constructor(email, username, password) {
-        this.email = email;
-        this.username = username;
-        this.password = password;
-    }
-}
 class Message {
     constructor(title, text) {
         this.title = title;
@@ -140,12 +135,16 @@ class Message {
     }
 }
 
+// ----- TEMPORARY ------
+updateProfile('admin@gmail.com', 'admin', 'password');
+// ----------------------
+
 // ----- VARIABLES -----
 let pushTimerDict = [];
 let code2fa = null;
 let today = new Date();
 let invalidLoginAttempts = 0;
-
+let activeUser = null;
 
 // ----- MESSAGES -----
 
@@ -173,10 +172,11 @@ app.get('/', (request, response) => {
 app.get('/login', (request, response) => {   
     response.sendFile(__dirname + '/views/login.html');
 }); 
+// TEST brute force alert
 app.post('/submitLogin', (request, response) => {
     let profile = getProfile();
-    let validUsername = profile.username == request.body.username;
-    let validPassword = profile.password == request.body.password;
+    let validUsername = profile.username == hash(request.body.username);
+    let validPassword = profile.password == hash(request.body.password);
 
     if(validUsername && validPassword) {
         invalidLoginAttempts = 0;
@@ -215,7 +215,18 @@ app.get('/profile', (request, response) => {
     }
     response.redirect('/profile2fa');
 });
-// TODO email 2fa code
+app.post('/submitUpdatedProfile', (request, response) => {
+    if(!authorized(request)) {
+        response.redirect('/');
+        return;
+    }
+    let email = request.body.email;
+    let username = request.body.username;
+    let password = request.body.password;
+    updateProfile(email, username, password);
+    response.redirect('/dashboard');
+});
+// TEST 2fa email
 app.get('/profile2fa', (request, response) => {
     if(!authorized(request)) {
         response.redirect('/');
@@ -224,9 +235,10 @@ app.get('/profile2fa', (request, response) => {
 
     // generate code
     code2fa = generate2faCode();
+    console.log(code2fa);
 
     // send code
-    console.log(code2fa);
+    sendEmail(code2fa);
 
     response.render('profile2fa');
 });
@@ -240,7 +252,9 @@ app.post('/submitProfile2fa', (request, response) => {
 
     // compare codes
     if(code2fa == request.body.code) {
-        response.render('profile');
+        let profile = getProfile();
+        console.log(profile);
+        response.render('profile', {data : {profile}});
     }
     else {
         alertInvalid2faAttempt();
@@ -592,19 +606,50 @@ app.get('/message/:title/:message', (request, response) => {
 
 // ----- FUNCTIONS -----
 
-// TODO read profile data
 function getProfile() {
     // read file
+    let encryption = JSON.parse(fs.readFileSync('data/profile.txt'));
+
     // decrypt
+    let decryption = decrypt(encryption);
+
     // convert to object
-    return new Profile('email@gmail.com', 'admin', 'password');
+    let profile = JSON.parse(decryption);
+    return profile;
 }
-// TODO save new profile data
 function updateProfile(email, username, password) {
+    // hash password and username
+    let hashedUsername = hash(username);
+    let hashedPassword = hash(password);
+
     // convert to JSON string
-    // encrypt
+    let profile = new Profile(email, hashedUsername, hashedPassword);
+    let profileString = JSON.stringify(profile);
+
+    // encrypt JSON string
+    let encryption = encrypt(profileString);
+
     // write to file
+    fs.writeFileSync('data/profile.txt', JSON.stringify(encryption));
 }
+function encrypt(text) {
+    const cipher = crypto.createCipheriv(algorithm, secretKey, iv);
+    const encrypted = Buffer.concat([cipher.update(text), cipher.final()]);
+    return {
+        iv: iv.toString('hex'),
+        content: encrypted.toString('hex')
+    };
+};
+function decrypt(hash) {
+    const decipher = crypto.createDecipheriv(algorithm, secretKey, Buffer.from(hash.iv, 'hex'));
+    const decrpyted = Buffer.concat([decipher.update(Buffer.from(hash.content, 'hex')), decipher.final()]);
+    return decrpyted.toString();
+};
+function hash(text) {
+    var hash = crypto.createHash('md5').update(text).digest('hex');
+    return hash;
+}
+
 function authorized(request) {
     // read from login 
     let loggedIn = activeUser != null;
@@ -781,7 +826,6 @@ function writeSurveyData(surveyData) {
     fs.writeFileSync('data/survey_data/' + surveyData.code + '.txt', surveyDataString);
 } 
 
-// TODO send notificaitons
 function push(code) {
     if(isSurveyPublished(code)) {
         let survey = getPublishedSurvey(code);
@@ -896,8 +940,6 @@ function sendSurveyNotification(survey) {
         sendText(phone, message);
     });
 }
-
-
 function sendText(phone, message) {
      try {
         const time = new Date().toDateString();

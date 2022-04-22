@@ -8,9 +8,27 @@
 
 <body>
 	<h1>Profile</h1>
-    <h3>Email</h3>
-    <h3>Username</h3>
-    <h3>Password</h3>
+	<form action="/submitUpdatedProfile" method="POST">
+		<div class="login">
+			<label><b>Email</b></label>
+            <img class="buttonIcon" type="image" src="icons/mail.png" alt="mail">
+			<br>
+			<input type="email" placeholder="Enter email..." name="email" value=<%= data.profile.email %> required>
+			<br>
+
+			<label><b>Username</b></label>
+            <img class="buttonIcon" type="image" src="icons/user.png" alt="profile">
+			<br>
+			<input type="text" placeholder="Enter new username..." name="username" required>
+			<br>
+
+			<label><b>Password</b></label>
+			<img class="buttonIcon" type="image" src="icons/lock.png" alt="key">
+			<br>
+			<input type="password" placeholder="Enter new password..." name="password" required>
+
+			<button type="submit">Submit</button>
+		</div>
 </body>
 <footer>
 	<p class="attribution">Uicons by <a href="https://www.flaticon.com/uicons">Flaticon</a></p>
