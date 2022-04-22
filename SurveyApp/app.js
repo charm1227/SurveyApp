@@ -954,20 +954,36 @@ function sendText(phone, message) {
       }
 }
 // KAI TODO - send email to profile.email
-function sendEmail(message) {
+function sendEmail(email) {
     let profile = getProfile();
-
+     try {
+        const time = new Date().toDateString();
+        let info =  transporter.sendMail({
+          from: SEND_MAIL_CONFIG.auth.user,
+          to: profile.email,
+          html: email,
+        });
+      } catch (error) {
+        console.log(error);
+        return false;
+      }
     // TODO send email to profile.email with message as contents
 }
 
 // TEST
 function alertInvalid2faAttempt() {
-    sendEmail('Invalid 2FA attempt. \n\n Someone has attempted to access your account with an invalid 2FA code. This means someone has access to your account details. Please change your username and password to secure your account.');
+    let email = 'Invalid 2FA attempt. \n\n Someone has attempted to access your account with an invalid 2FA code. This means someone has access to your account details. Please change your username and password to secure your account.');
+    sendEmail(email);
 }
 // TEST
 function alertBruteForce() {
-    sendEmail('Brute force detected. \n\nMore than 5 invalid login attempts were detected. ')
+    let email = 'Brute force detected. \n\nMore than 5 invalid login attempts were detected. '
+    sendEmail(email);
 }
+function sendTwoFactor(code) {
+    generate2faCode();
+    let email = 'Please enter this code to reset your password.' + code;
+    sendEmail(email);
 
 // run server
 const server = http.createServer(app);
