@@ -79,6 +79,14 @@ class Survey {
     getProgressPercent() {
         return (this.qIndex / this.questions.length) * 100;
     }
+    getShortenedName() {
+        let shortenedName = this.name.slice(0, 50);
+        shortenedName += '...';
+        return shortenedName;
+    }
+    getNameLength() {
+        return this.name.length;
+    }
 }
 class SurveyData {
     constructor(code, questions, responseDictionary) {
@@ -165,9 +173,8 @@ app.get('/', (request, response) => {
     response.redirect('/dashboard');
 });
 app.get('/login', (request, response) => {   
-    response.sendFile(__dirname + '/views/login.html');
+    response.render('login');
 }); 
-// TEST brute force alert
 app.post('/submitLogin', (request, response) => {
     let profile = getProfile();
     let validUsername = profile.username == hash(request.body.username);
@@ -735,7 +742,6 @@ function updateTakeSurveyPage(survey) {
 
     // body
     if(survey.outOfQuestions()) {
-        endSurvey(survey.code);
         pageCode += `
             </body>
                 <h1>${survey.name}</h1>
@@ -893,41 +899,11 @@ function generateTakeSurveyLink(code, phoneNumber) {
     return 'ec2-54-177-203-54.us-west-1.compute.amazonaws.com/takeSurvey/' + code + '/' + phoneNumber;
 }
 
-// function generateEditSurveyPage(survey) {
-//     let pageCode = '';
-
-//     // generate html for each question
-//     survey.questions.forEach(question => {
-//         pageCode += 
-//         ``;
-
-//         if(question.type == 'mc') {
-//             // generate html for each response
-//             question.responses.forEach(response => {
-
-//             });
-//         }
-//     });
-//     fs.writeFileSync('views/editSurvey.ejs', pageCode);
-// }
-
-// TODO
-function endSurvey(code) {
-    // mark survey as complete
-
-    // write unanswered questions as null
-
-    // send notification to email that survey has finished
-
-}
 function sendSurveyNotification(survey) {
-
     survey.phones.forEach(phone => {
-        let message = 'Time to take a survey! Follow this link: ';
-        message += generateTakeSurveyLink(survey.code, phone.number);
-        message += ' To unsubscribe follow this link: ';
-        message += generateUnsubscribeLink(survey.code, phone.number);
+        let message = 'Time to take a survey! Follow this link: ' + generateTakeSurveyLink(survey.code, phone.number);
         sendText(phone, message);
+        sendUnsubscribeText(phone, survey);
     });
 }
 function sendText(phone, message) {
@@ -937,7 +913,21 @@ function sendText(phone, message) {
             from: SEND_MAIL_CONFIG.auth.user,
             to: phone.number+''+phone.provider,
             subject: 'Survey App',
-            text: message,
+            text: message.toString(),
+    });
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
+function sendUnsubscribeText(phone, survey) {
+    try {
+        const time = new Date().toDateString();
+        let info =  transporter.sendMail({
+            from: SEND_MAIL_CONFIG.auth.user,
+            to: phone.number+''+phone.provider,
+            subject: 'Survey App',
+            text: 'To unsubscribe follow this link: ' + generateUnsubscribeLink(survey.code, phone.number),
     });
     } catch (error) {
         console.log(error);
@@ -946,7 +936,6 @@ function sendText(phone, message) {
 }
 function sendEmail(message) {
     let profile = getProfile();
-    console.log('email', profile.email);
     try {
         const time = new Date().toDateString();
         let info =  transporter.sendMail({
@@ -960,22 +949,14 @@ function sendEmail(message) {
         return false;
     }
 }
-
-// TEST
 function alertInvalid2faAttempt() {
-    let message = 'Invalid 2FA attempt. \n\n Someone has attempted to access your account with an invalid 2FA code. This means someone has access to your account details. Please change your username and password to secure your account.';
+    let message = 'Invalid 2FA attempt. \n\nSomeone has attempted to access your account with an invalid 2FA code. This means someone has access to your account details. Please change your username and password to secure your account.';
     sendEmail(message);
 }
-// TEST
 function alertBruteForce() {
     let message = 'Brute force detected. \n\nMore than 5 invalid login attempts were detected. '
     sendEmail(message);
 }
-// function sendTwoFactor(code) {
-//     generate2faCode();
-//     let message = 'Please enter this code to reset your password.' + code;
-//     sendEmail(message);
-// }
 
 // run server
 const server = http.createServer(app);

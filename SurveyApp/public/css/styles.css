@@ -11,23 +11,63 @@ form {
 
 .survey {
   background-color: #f1f1f1;
-  width: 280px;
+  width: 300px;
   height: 70px;
 }
 
-.surveyControls {
-  font-size: 12pt;
-  font-weight: 500;
+.unpublishedSurveyGrid {
   display: grid;
-  justify-content: center;
-  align-content: center;
-  gap: 4px;
-  grid-auto-flow: column;
+  grid-template-columns: [code] 15% [name] 45% [buttons] 40%;
+  grid-template-areas: "code name buttons";
+  align-items: center;
+  padding-left: 5px;
+}
+
+.publishedSurveyGrid {
+  display: grid;
+  grid-template-columns: 15% 45% 40%;
+  grid-template-rows: auto;
+  grid-template-areas: 
+    "code name buttons"
+    "bar bar buttons";
+  align-items: center;
+  padding-left: 5px;
+}
+
+.publishedSurvey {
+  align-items: center;
 }
 
 .surveyCode {
-  font-size: 14pt;
+  grid-area: code;
+  font-size: 12pt;
   font-weight: 550;
+}
+
+.surveyName {
+  grid-area: name;
+  font-size: 10pt;
+  font-weight: 500;
+}
+
+.surveyButtonContainer {
+  grid-area: buttons;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-content: center;
+  gap: 3px;
+}
+
+.progressBar {
+  grid-area: bar;
+}
+
+.doneIcon {
+  padding-left: 10px;
+  height: 15px;
+  width: 15px; 
+  display: inline-block;
 }
 
 .buttonIcon {
@@ -91,5 +131,3 @@ input[type=text], input[type=password], input[type=number], input[type=email] {
 .attribution {
   font-size: 8pt;
 }
-
-</style>
