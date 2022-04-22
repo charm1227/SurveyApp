@@ -135,10 +135,6 @@ class Message {
     }
 }
 
-// ----- TEMPORARY ------
-updateProfile('admin@gmail.com', 'admin', 'password');
-// ----------------------
-
 // ----- VARIABLES -----
 let pushTimerDict = [];
 let code2fa = null;
@@ -941,49 +937,51 @@ function sendSurveyNotification(survey) {
     });
 }
 function sendText(phone, message) {
-     try {
-        const time = new Date().toDateString();
-        let info =  transporter.sendMail({
-          from: SEND_MAIL_CONFIG.auth.user,
-          to: phone.number+''+phone.provider,
-          html: message,
-        });
-      } catch (error) {
+    try {
+    const time = new Date().toDateString();
+    let info =  transporter.sendMail({
+        from: SEND_MAIL_CONFIG.auth.user,
+        to: phone.number+''+phone.provider,
+        html: message,
+    });
+    } catch (error) {
         console.log(error);
         return false;
-      }
+    }
 }
-// KAI TODO - send email to profile.email
-function sendEmail(email) {
+
+
+function sendEmail(message) {
     let profile = getProfile();
-     try {
+    console.log('email', profile.email);
+    try {
         const time = new Date().toDateString();
         let info =  transporter.sendMail({
-          from: SEND_MAIL_CONFIG.auth.user,
-          to: profile.email,
-          html: email,
+            from: SEND_MAIL_CONFIG.auth.user,
+            to: profile.email,
+            html: message.toString(),
         });
-      } catch (error) {
+    } catch (error) {
         console.log(error);
         return false;
-      }
-    // TODO send email to profile.email with message as contents
+    }
 }
 
 // TEST
 function alertInvalid2faAttempt() {
-    let email = 'Invalid 2FA attempt. \n\n Someone has attempted to access your account with an invalid 2FA code. This means someone has access to your account details. Please change your username and password to secure your account.');
-    sendEmail(email);
+    let message = 'Invalid 2FA attempt. \n\n Someone has attempted to access your account with an invalid 2FA code. This means someone has access to your account details. Please change your username and password to secure your account.';
+    sendEmail(message);
 }
 // TEST
 function alertBruteForce() {
-    let email = 'Brute force detected. \n\nMore than 5 invalid login attempts were detected. '
-    sendEmail(email);
+    let message = 'Brute force detected. \n\nMore than 5 invalid login attempts were detected. '
+    sendEmail(message);
 }
-function sendTwoFactor(code) {
-    generate2faCode();
-    let email = 'Please enter this code to reset your password.' + code;
-    sendEmail(email);
+// function sendTwoFactor(code) {
+//     generate2faCode();
+//     let message = 'Please enter this code to reset your password.' + code;
+//     sendEmail(message);
+// }
 
 // run server
 const server = http.createServer(app);
