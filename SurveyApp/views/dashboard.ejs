@@ -39,8 +39,8 @@
 </head>
 
 <body>
-    <input class="buttonIcon" onclick="window.location.href = '/profile';" type="image" src="icons/user.png" alt="view profile" name="profile icon">
-    <input class="buttonIcon" onclick="window.location.href = '/logout';" type="image" src="icons/sign-out-alt.png" alt="logout" name="logout icon">
+    <input class="buttonIcon" onclick="window.location.href = '/profile';" type="image" src="icons/user.png" title="profile" alt="view profile" name="profile icon">
+    <input class="buttonIcon" onclick="window.location.href = '/logout';" type="image" src="icons/sign-out-alt.png" title="logout" alt="logout" name="logout icon">
 
     <div class="grid-container">
         <div class="grid-item">
@@ -51,9 +51,9 @@
                 <div class="survey surveyControls">
                     <label class="surveyCode"><%= survey.code %></label>
                     <label><%= survey.name %></label>
-                    <input class="buttonIcon" onclick="window.location.href = '/editSurvey/<%= survey.code %>';" type="image" src="icons/edit.png" alt="edit" name="edit icon">
-                    <input class="buttonIcon" onclick="onPublishClick('<%= survey.code %>')" type="image" src="icons/rocket.png" alt="publish" name="upload icon">
-                    <input class="buttonIcon" onclick="onDeleteClick('<%= survey.code %>')" type="image" src="icons/trash.png" alt="delete" name="delete icon">
+                    <input class="buttonIcon" onclick="window.location.href = '/editSurvey/<%= survey.code %>';" title="edit" type="image" src="icons/edit.png" alt="edit" name="edit icon">
+                    <input class="buttonIcon" onclick="onPublishClick('<%= survey.code %>')" title="publish" type="image" src="icons/rocket.png" alt="publish" name="upload icon">
+                    <input class="buttonIcon" onclick="onDeleteClick('<%= survey.code %>')" title="delete" type="image" src="icons/trash.png" alt="delete" name="delete icon">
                 </div>
                 <br>
             <% }); %>
@@ -72,13 +72,13 @@
                         <label class="surveyCode"><%= survey.code %></label>
                         <label><%= survey.name %></label>
                         <% if(survey.getProgressPercent() == 0) { %>
-                            <input class="buttonIcon" onclick="onStartClick('<%= survey.code %>')" type="image" src="icons/play.png" alt="start" name="start icon">
+                            <input class="buttonIcon" onclick="onStartClick('<%= survey.code %>')" type="image" src="icons/play.png" title="start survey" alt="start" name="start icon">
                         <% } %>
                         <% if(!survey.isFinished) { %>
-                            <input class="buttonIcon" onclick="onPushClick('<%= survey.code %>')" type="image" src="icons/smartphone.png" alt="push" name="push icon">
+                            <input class="buttonIcon" onclick="onPushClick('<%= survey.code %>')" title="push surveys" type="image" src="icons/smartphone.png" alt="push" name="push icon">
                         <% } %>
-                        <input class="buttonIcon" onclick="window.location.href = '/downloadSurveyData/<%= survey.code %>';" type="image" src="icons/download.png" alt="download" name="download icon">
-                        <input class="buttonIcon" onclick="onUnpublishClick('<%= survey.code %>')" type="image" src="icons/x.png" alt="unpublish" name="remove icon">
+                        <input class="buttonIcon" onclick="window.location.href = '/downloadSurveyData/<%= survey.code %>';" type="image" title="download" src="icons/download.png" alt="download" name="download icon">
+                        <input class="buttonIcon" onclick="onUnpublishClick('<%= survey.code %>')" type="image" src="icons/x.png" title="remove survey" alt="unpublish" name="remove icon">
                     </div>
                     <div class="surveyControls"> 
                         <% if(survey.isFinished) { %>
