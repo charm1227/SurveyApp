@@ -1,0 +1,42 @@
+
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <title>Survey App | Take Survey</title>
+        <meta charset="utf-8">
+        <link rel="stylesheet" type="text/css" href="/css/styles.css">
+    </head>
+            <body>
+                <h1>Test survey</h1>
+                <form action='/submitResponse/6356/<%= phoneNumber %>' method="POST">
+                <div class="question"><!-- T/F -->
+                                <div>
+                                    <h3>1. 4</h3>
+                                    <input type="radio" name="1" value="true" required>
+                                    <label>True</label>
+                                    <input type="radio" name="1" value="false" required>
+                                    <label>False</label>
+                                </div><!-- T/F -->
+                                <div>
+                                    <h3>2. 5</h3>
+                                    <input type="radio" name="2" value="true" required>
+                                    <label>True</label>
+                                    <input type="radio" name="2" value="false" required>
+                                    <label>False</label>
+                                </div><!-- T/F -->
+                                <div>
+                                    <h3>3. 6</h3>
+                                    <input type="radio" name="3" value="true" required>
+                                    <label>True</label>
+                                    <input type="radio" name="3" value="false" required>
+                                    <label>False</label>
+                                </div>
+                    <br>
+                    <button class="button" type="submit">Submit</button>
+                </div>
+                </form>
+            </body>
+        <footer>
+            <p class="attribution">Uicons by <a href="https://www.flaticon.com/uicons">Flaticon</a></p>
+        </footer>
+        </html>

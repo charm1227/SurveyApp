@@ -892,11 +892,15 @@ function continueActiveSurveys() {
     });
 }
 
+function getAddress() {
+    const address = fs.readFileSync('address.txt');
+    return address;
+}
 function generateUnsubscribeLink(code, phoneNumber) {
-    return 'ec2-54-177-203-54.us-west-1.compute.amazonaws.com/unsubscribe/' + code + '/' + phoneNumber;
+    return getAddress() + '/unsubscribe/' + code + '/' + phoneNumber;
 }
 function generateTakeSurveyLink(code, phoneNumber) {
-    return 'ec2-54-177-203-54.us-west-1.compute.amazonaws.com/takeSurvey/' + code + '/' + phoneNumber;
+    return getAddress() + '/takeSurvey/' + code + '/' + phoneNumber;
 }
 
 function sendSurveyNotification(survey) {
@@ -913,7 +917,7 @@ function sendText(phone, message) {
             from: SEND_MAIL_CONFIG.auth.user,
             to: phone.number+''+phone.provider,
             subject: 'Survey App',
-            text: message.toString(),
+            text: '' + message,
     });
     } catch (error) {
         console.log(error);
