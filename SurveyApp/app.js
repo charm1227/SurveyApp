@@ -751,6 +751,7 @@ function updateTakeSurveyPage(survey) {
     else {
         pageCode += `
             <body>
+            <div class = "mobile10">
                 <h1>${survey.name}</h1>
                 <form action='/submitResponse/${survey.code}/<%= phoneNumber %>' method="POST">
                 <div class="question">`;
@@ -768,7 +769,7 @@ function updateTakeSurveyPage(survey) {
                                     <label>True</label>
                                     <input type="radio" name="${i}" value="false" required>
                                     <label>False</label>
-                                </div>`;
+                                </div></div>`;
                         }
                         // FR question
                         else if(question.type == 'fr') {
@@ -776,7 +777,7 @@ function updateTakeSurveyPage(survey) {
                                 <div>
                                     <h3>${i}. ${question.text}</h3>
                                     <textarea rows="5" cols="60" name="${i}" placeholder="Enter text..." required></textarea>
-                                </div>`;
+                                </div></div>`;
                         }
                         // MC question
                         else if(question.type == 'mc') {
@@ -787,7 +788,7 @@ function updateTakeSurveyPage(survey) {
                                 pageCode += `<input type="radio" name="${i}" value="${response}" required>
                                 <label>${response}</label>`;
                             });
-                            pageCode += `</div>`;
+                            pageCode += `</div></div>`;
                         }
                     }
                 }
