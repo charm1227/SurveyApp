@@ -253,6 +253,7 @@ app.post('/submitProfile2fa', (request, response) => {
         response.render('profile', {data : {profile}});
     }
     else {
+        activeUser = null;
         alertInvalid2faAttempt();
         displayMessagePage(response, invalid2faCodeMessage);
     }
